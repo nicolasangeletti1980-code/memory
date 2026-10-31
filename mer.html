@@ -99,17 +99,6 @@
       color: var(--rose);
     }
 
-    /* Petit bouton rond pour couper / remettre le son */
-    .bouton-son {
-      flex: 0 0 46px;
-      font-size: 1.5rem;
-      background: rgba(255, 255, 255, 0.75);
-      border: 2px solid var(--blanc);
-      border-radius: 16px;
-      cursor: pointer;
-      box-shadow: 0 3px 8px rgba(30, 110, 180, 0.2);
-    }
-
     /* ===== La grille de cartes ===== */
     .plateau {
       display: grid;
@@ -119,8 +108,8 @@
          - la largeur de l'écran moins les marges
          - la hauteur de l'écran moins la place du titre, des infos et du bouton
          - 520 px maximum (pour les tablettes) */
-      width: min(100%, 100vh - 260px, 520px);  /* pour les vieux navigateurs */
-      width: min(100%, 100dvh - 260px, 520px);
+      width: min(100%, 100vh - 285px, 520px);  /* pour les vieux navigateurs */
+      width: min(100%, 100dvh - 285px, 520px);
     }
 
     /* ===== Une carte ===== */
@@ -131,6 +120,11 @@
       border: none;
       background: none;
       padding: 0;
+    }
+
+    /* La carte s'enfonce un peu sous le doigt */
+    .carte:active {
+      transform: scale(0.94);
     }
 
     /* La partie qui tourne (elle contient le dos et la face) */
@@ -190,6 +184,11 @@
     .carte.trouvee .face {
       border-color: var(--rose);
       animation: saut 0.5s ease 0.45s;
+    }
+
+    /* À la victoire, toutes les cartes sautent l'une après l'autre */
+    .carte.trouvee.danse .face {
+      animation: saut 0.5s ease var(--retard) 2;
     }
 
     @keyframes saut {
@@ -259,14 +258,35 @@
       color: #1f5f99;
     }
 
-    /* ===== Petit lien vers l'autre jeu ===== */
-    .lien-jeu {
-      color: #1f5f99;
-      margin-top: 6px;
-      font-size: 0.95rem;
-      font-weight: bold;
+    /* ===== Les boutons ronds du bas : accueil, musique, bruitages ===== */
+    .barre {
+      display: flex;
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .rond {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 3px solid var(--blanc);
+      background: rgba(255, 255, 255, 0.8);
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       text-decoration: none;
-      padding: 8px 14px;   /* zone assez grande pour le doigt */
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .rond:active {
+      transform: scale(0.9);
+    }
+
+    /* Bouton éteint (musique ou bruitages coupés) : un peu transparent */
+    .rond.eteint {
+      opacity: 0.55;
     }
 
     /* ===== Fenêtre de victoire ===== */
@@ -313,9 +333,55 @@
       font-size: 1.05rem;
     }
 
+    /* Le personnage qui saute au-dessus du message de victoire */
+    .mascotte {
+      width: 130px;
+      height: 130px;
+      margin: -80px auto 0;
+      animation: bondir 0.45s ease-in-out infinite alternate;
+    }
+
+    .mascotte svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    @keyframes bondir {
+      from { transform: translateY(0) rotate(-4deg); }
+      to   { transform: translateY(-12px) rotate(4deg); }
+    }
+
     .record {
       color: var(--violet);
       font-weight: bold;
+    }
+
+    /* ===== Le décor qui flotte doucement derrière le jeu ===== */
+    .decor {
+      position: fixed;
+      inset: 0;
+      z-index: -1;            /* derrière tout le reste */
+      overflow: hidden;
+      pointer-events: none;   /* on ne peut pas le toucher */
+    }
+
+    .decor span {
+      position: absolute;
+      bottom: -60px;
+      opacity: 0.35;
+      animation: flotter linear infinite;
+    }
+
+    /* Une bulle dessinée (pour la mer) */
+    .decor .bulle-decor {
+      border: 3px solid #fff;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    @keyframes flotter {
+      from { transform: translateY(0) rotate(0deg); }
+      to   { transform: translateY(-115vh) rotate(25deg); }
     }
 
     /* ===== Confettis (petits cœurs et étoiles qui tombent) ===== */
@@ -335,12 +401,15 @@
     /* Si le téléphone demande moins d'animations, on les coupe */
     @media (prefers-reduced-motion: reduce) {
       .carte-interieur { transition: none; }
-      .carte.trouvee .face, .victoire-boite { animation: none; }
+      .carte.trouvee .face, .victoire-boite, .mascotte, .carte.trouvee.danse .face, .decor span { animation: none; }
       .confetti { display: none; }
     }
   </style>
 </head>
 <body>
+
+  <!-- Le décor animé (rempli par le JavaScript) -->
+  <div class="decor" id="decor" aria-hidden="true"></div>
 
   <h1>
     <span class="t-rose">Memory</span>
@@ -353,7 +422,6 @@
     <div class="info">Coups<strong id="coups">0</strong></div>
     <div class="info">Temps<strong id="temps">0:00</strong></div>
     <div class="info">Record<strong id="record">–</strong></div>
-    <button class="bouton-son" id="bouton-son" aria-label="Couper le son">🔔</button>
   </div>
 
   <!-- Les cartes seront ajoutées ici par le JavaScript -->
@@ -368,19 +436,26 @@
     <button class="bouton" id="rejouer">Rejouer</button>
   </div>
 
-  <!-- Lien vers la page d'accueil (le choix des jeux) -->
-  <a class="lien-jeu" href="index.html">🏠 Choisir un autre jeu</a>
+  <!-- Les boutons ronds : retour à l'accueil, musique, bruitages -->
+  <div class="barre">
+    <a class="rond" href="index.html" aria-label="Retour à l'accueil">🏠</a>
+    <button class="rond" id="bouton-musique" aria-label="Couper la musique">🎵</button>
+    <button class="rond" id="bouton-son" aria-label="Couper les bruitages">🔔</button>
+  </div>
 
   <!-- Fenêtre qui s'affiche quand on a gagné -->
   <div class="victoire" id="victoire">
     <div class="victoire-boite">
-      <h2>🎉 Bravo !</h2>
+      <div class="mascotte" id="mascotte"></div>
+      <h2>Splash ! Bravo !</h2>
       <p id="resultat"></p>
       <p id="message-record"></p>
       <button class="bouton" id="rejouer-victoire">Rejouer</button>
     </div>
   </div>
 
+  <!-- La musique de fond, partagée par toutes les pages -->
+  <script src="musique.js"></script>
   <script>
     // ===================================================================
     // 1. LES DESSINS DES CARTES
@@ -587,6 +662,9 @@
     // Noms utilisés pour ranger les infos dans la mémoire du téléphone
     const CLE_RECORD = "memory-mer-record";   // meilleur score
     const CLE_MODE = "memory-mer-mode";       // dernier mode choisi
+    // Le personnage qui saute quand on gagne
+    const MASCOTTE = "sirene";
+
     const CLE_SON = "memory-mer-son";         // son activé ou non
 
     // Les deux modes de jeu : le nombre de paires sur le plateau
@@ -775,7 +853,8 @@
     // Le bouton du son (🔔) : couper ou remettre le son
     function afficherBoutonSon() {
       boutonSon.textContent = sonActif ? "🔔" : "🔕";
-      boutonSon.setAttribute("aria-label", sonActif ? "Couper le son" : "Remettre le son");
+      boutonSon.setAttribute("aria-label", sonActif ? "Couper les bruitages" : "Remettre les bruitages");
+      boutonSon.classList.toggle("eteint", !sonActif);
     }
 
     boutonSon.addEventListener("click", function () {
@@ -951,6 +1030,16 @@
 
       afficherRecord();
 
+      // On met le dessin du personnage dans la fenêtre de victoire
+      document.getElementById("mascotte").innerHTML =
+        CARTES.find(function (c) { return c.id === MASCOTTE; }).dessin;
+
+      // Toutes les cartes font la fête : elles sautent l'une après l'autre
+      document.querySelectorAll(".carte").forEach(function (carte, i) {
+        carte.style.setProperty("--retard", (0.5 + i * 0.06) + "s");
+        carte.classList.add("danse");
+      });
+
       // Petite pause pour laisser finir l'animation de la dernière carte
       attente = setTimeout(function () {
         fenetreVictoire.classList.add("visible");
@@ -978,7 +1067,38 @@
     // ===================================================================
     nouvellePartie();
     // ===================================================================
-    // 14. Le mode appli : une copie du jeu est gardée dans le téléphone
+    // 14. Le décor qui flotte derrière le jeu
+    // ===================================================================
+    function creerDecor(symboles) {
+      const decor = document.getElementById("decor");
+      for (let i = 0; i < 12; i++) {
+        const element = document.createElement("span");
+        const symbole = symboles[i % symboles.length];
+        const taille = 18 + Math.random() * 22;               // taille au hasard
+        if (symbole === "bulle") {
+          element.className = "bulle-decor";                  // une bulle dessinée
+          element.style.width = taille + "px";
+          element.style.height = taille + "px";
+        } else {
+          element.textContent = symbole;
+          element.style.fontSize = taille + "px";
+        }
+        element.style.left = Math.random() * 95 + "vw";        // position au hasard
+        element.style.animationDuration = 14 + Math.random() * 12 + "s";  // lent
+        element.style.animationDelay = -Math.random() * 20 + "s";         // déjà en route
+        decor.appendChild(element);
+      }
+    }
+
+    creerDecor(["bulle", "bulle", "bulle", "bulle", "🐠", "🐚"]);
+
+    // ===================================================================
+    // 15. La petite musique de fond (voir le fichier musique.js)
+    // ===================================================================
+    initMusique(MELODIES.vousDiraiJe, document.getElementById("bouton-musique"));
+
+    // ===================================================================
+    // 16. Le mode appli : une copie du jeu est gardée dans le téléphone
     // pour pouvoir jouer même sans internet (voir le fichier sw.js)
     // ===================================================================
     if ("serviceWorker" in navigator) {

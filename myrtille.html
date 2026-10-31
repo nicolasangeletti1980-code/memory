@@ -99,17 +99,6 @@
       color: var(--rose);
     }
 
-    /* Petit bouton rond pour couper / remettre le son */
-    .bouton-son {
-      flex: 0 0 46px;
-      font-size: 1.5rem;
-      background: rgba(255, 255, 255, 0.75);
-      border: 2px solid var(--blanc);
-      border-radius: 16px;
-      cursor: pointer;
-      box-shadow: 0 3px 8px rgba(155, 107, 255, 0.2);
-    }
-
     /* ===== La grille de cartes ===== */
     .plateau {
       display: grid;
@@ -119,8 +108,8 @@
          - la largeur de l'écran moins les marges
          - la hauteur de l'écran moins la place du titre, des infos et du bouton
          - 520 px maximum (pour les tablettes) */
-      width: min(100%, 100vh - 260px, 520px);  /* pour les vieux navigateurs */
-      width: min(100%, 100dvh - 260px, 520px);
+      width: min(100%, 100vh - 285px, 520px);  /* pour les vieux navigateurs */
+      width: min(100%, 100dvh - 285px, 520px);
     }
 
     /* ===== Une carte ===== */
@@ -131,6 +120,11 @@
       border: none;
       background: none;
       padding: 0;
+    }
+
+    /* La carte s'enfonce un peu sous le doigt */
+    .carte:active {
+      transform: scale(0.94);
     }
 
     /* La partie qui tourne (elle contient le dos et la face) */
@@ -190,6 +184,11 @@
     .carte.trouvee .face {
       border-color: var(--rose);
       animation: saut 0.5s ease 0.45s;
+    }
+
+    /* À la victoire, toutes les cartes sautent l'une après l'autre */
+    .carte.trouvee.danse .face {
+      animation: saut 0.5s ease var(--retard) 2;
     }
 
     @keyframes saut {
@@ -259,14 +258,35 @@
       color: #1f5f99;
     }
 
-    /* ===== Petit lien vers l'autre jeu ===== */
-    .lien-jeu {
-      color: #1f5f99;
-      margin-top: 6px;
-      font-size: 0.95rem;
-      font-weight: bold;
+    /* ===== Les boutons ronds du bas : accueil, musique, bruitages ===== */
+    .barre {
+      display: flex;
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .rond {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 3px solid var(--blanc);
+      background: rgba(255, 255, 255, 0.8);
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       text-decoration: none;
-      padding: 8px 14px;   /* zone assez grande pour le doigt */
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .rond:active {
+      transform: scale(0.9);
+    }
+
+    /* Bouton éteint (musique ou bruitages coupés) : un peu transparent */
+    .rond.eteint {
+      opacity: 0.55;
     }
 
     /* ===== Fenêtre de victoire ===== */
@@ -313,9 +333,55 @@
       font-size: 1.05rem;
     }
 
+    /* Le personnage qui saute au-dessus du message de victoire */
+    .mascotte {
+      width: 130px;
+      height: 130px;
+      margin: -80px auto 0;
+      animation: bondir 0.45s ease-in-out infinite alternate;
+    }
+
+    .mascotte svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    @keyframes bondir {
+      from { transform: translateY(0) rotate(-4deg); }
+      to   { transform: translateY(-12px) rotate(4deg); }
+    }
+
     .record {
       color: var(--violet);
       font-weight: bold;
+    }
+
+    /* ===== Le décor qui flotte doucement derrière le jeu ===== */
+    .decor {
+      position: fixed;
+      inset: 0;
+      z-index: -1;            /* derrière tout le reste */
+      overflow: hidden;
+      pointer-events: none;   /* on ne peut pas le toucher */
+    }
+
+    .decor span {
+      position: absolute;
+      bottom: -60px;
+      opacity: 0.35;
+      animation: flotter linear infinite;
+    }
+
+    /* Une bulle dessinée (pour la mer) */
+    .decor .bulle-decor {
+      border: 3px solid #fff;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    @keyframes flotter {
+      from { transform: translateY(0) rotate(0deg); }
+      to   { transform: translateY(-115vh) rotate(25deg); }
     }
 
     /* ===== Confettis (petits cœurs et étoiles qui tombent) ===== */
@@ -335,12 +401,15 @@
     /* Si le téléphone demande moins d'animations, on les coupe */
     @media (prefers-reduced-motion: reduce) {
       .carte-interieur { transition: none; }
-      .carte.trouvee .face, .victoire-boite { animation: none; }
+      .carte.trouvee .face, .victoire-boite, .mascotte, .carte.trouvee.danse .face, .decor span { animation: none; }
       .confetti { display: none; }
     }
   </style>
 </head>
 <body>
+
+  <!-- Le décor animé (rempli par le JavaScript) -->
+  <div class="decor" id="decor" aria-hidden="true"></div>
 
   <h1>
     <span class="t-rose">Memory</span>
@@ -353,7 +422,6 @@
     <div class="info">Coups<strong id="coups">0</strong></div>
     <div class="info">Temps<strong id="temps">0:00</strong></div>
     <div class="info">Record<strong id="record">–</strong></div>
-    <button class="bouton-son" id="bouton-son" aria-label="Couper le son">🔔</button>
   </div>
 
   <!-- Les cartes seront ajoutées ici par le JavaScript -->
@@ -368,12 +436,17 @@
     <button class="bouton" id="rejouer">Rejouer</button>
   </div>
 
-  <!-- Lien vers la page d'accueil (le choix des jeux) -->
-  <a class="lien-jeu" href="index.html">🏠 Choisir un autre jeu</a>
+  <!-- Les boutons ronds : retour à l'accueil, musique, bruitages -->
+  <div class="barre">
+    <a class="rond" href="index.html" aria-label="Retour à l'accueil">🏠</a>
+    <button class="rond" id="bouton-musique" aria-label="Couper la musique">🎵</button>
+    <button class="rond" id="bouton-son" aria-label="Couper les bruitages">🔔</button>
+  </div>
 
   <!-- Fenêtre qui s'affiche quand on a gagné -->
   <div class="victoire" id="victoire">
     <div class="victoire-boite">
+      <div class="mascotte" id="mascotte"></div>
       <h2>Bravo Myrtille !</h2>
       <p id="resultat"></p>
       <p id="message-record"></p>
@@ -381,6 +454,8 @@
     </div>
   </div>
 
+  <!-- La musique de fond, partagée par toutes les pages -->
+  <script src="musique.js"></script>
   <script>
     // ===================================================================
     // 1. LES DESSINS DES CARTES
@@ -494,21 +569,43 @@
           '</svg>'
       },
       {
-        id: "citrouille", nom: "Une citrouille d'Halloween", fond: "#fff0dc",
+        id: "hovawart", nom: "Un chien hovawart", fond: "#fff0dc",
         dessin:
+          // Un hovawart "noir marqué de feu", dessiné d'après le standard
+          // officiel de la race : robe noire, marques blond moyen au bas du
+          // museau, autour des babines, sous la gorge, au-dessus des yeux
+          // et deux taches au poitrail. Oreilles triangulaires tombantes.
           '<svg viewBox="0 0 100 100">' +
-          // La tige et la petite vrille
-          '<path d="M48 26 q1 -10 8 -14" stroke="#5c8a3a" stroke-width="6" fill="none" stroke-linecap="round"/>' +
-          '<path d="M54 22 q10 -6 14 2 q2 6 -4 6" stroke="#7fbf4d" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
-          // Les trois "quartiers" de la citrouille
-          '<ellipse cx="33" cy="60" rx="20" ry="27" fill="#ff8c2e" stroke="#d9661a" stroke-width="2"/>' +
-          '<ellipse cx="67" cy="60" rx="20" ry="27" fill="#ff8c2e" stroke="#d9661a" stroke-width="2"/>' +
-          '<ellipse cx="50" cy="60" rx="20" ry="29" fill="#ffa04a" stroke="#d9661a" stroke-width="2"/>' +
-          // Le visage gentil (yeux en triangle et grand sourire)
-          '<path d="M33 55 L43 55 L38 46Z" fill="#6b2f00"/>' +
-          '<path d="M57 55 L67 55 L62 46Z" fill="#6b2f00"/>' +
-          '<path d="M48 62 L52 62 L50 59Z" fill="#6b2f00"/>' +
-          '<path d="M34 67 Q50 82 66 67 Q50 74 34 67Z" fill="#6b2f00"/>' +
+          // Le cou et le poitrail (poil long et un peu ondulé)
+          '<path d="M22 98 Q24 75 36 69 L64 69 Q76 75 78 98 Z" fill="#1f1f1f"/>' +
+          '<path d="M30 80 q3 3 0 6 M70 80 q-3 3 0 6 M36 90 q3 3 0 6 M64 90 q-3 3 0 6" stroke="#3d3d3d" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+          // Les deux taches feu du poitrail
+          '<ellipse cx="43" cy="89" rx="6.5" ry="6" fill="#d69a4a"/>' +
+          '<ellipse cx="57" cy="89" rx="6.5" ry="6" fill="#d69a4a"/>' +
+          // La tête : crâne large et front bombé
+          '<path d="M29 37 Q29 13 50 12 Q71 13 71 37 Q71 50 63 58 L61 70 L39 70 L37 58 Q29 50 29 37 Z" fill="#1f1f1f"/>' +
+          // Le feu sous la gorge, puis au bas du museau et autour des babines
+          '<ellipse cx="50" cy="75" rx="10" ry="5.5" fill="#d69a4a"/>' +
+          '<ellipse cx="50" cy="67" rx="11.5" ry="7.5" fill="#d69a4a"/>' +
+          // Le haut du museau reste noir
+          '<path d="M43 42 Q50 39 57 42 L59.5 62 Q50 58 40.5 62 Z" fill="#1f1f1f"/>' +
+          // La truffe noire avec un reflet
+          '<ellipse cx="50" cy="61" rx="5.5" ry="4" fill="#000"/>' +
+          '<ellipse cx="48.3" cy="59.6" rx="1.6" ry="1" fill="#777"/>' +
+          // La bouche et la petite langue
+          '<path d="M50 65 v3 M44.5 69 q5.5 4 11 0" stroke="#4a2c10" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+          '<path d="M47.5 71 q2.5 5 5 0 Z" fill="#ff8fa3"/>' +
+          // Les points feu au-dessus des yeux
+          '<ellipse cx="40" cy="28" rx="3.6" ry="2.4" fill="#d69a4a"/>' +
+          '<ellipse cx="60" cy="28" rx="3.6" ry="2.4" fill="#d69a4a"/>' +
+          // Les yeux marron, avec un reflet blanc
+          '<circle cx="40" cy="36" r="4.2" fill="#6b3d1a"/><circle cx="60" cy="36" r="4.2" fill="#6b3d1a"/>' +
+          '<circle cx="40" cy="36" r="2.4" fill="#000"/><circle cx="60" cy="36" r="2.4" fill="#000"/>' +
+          '<circle cx="41.3" cy="34.7" r="1.2" fill="#fff"/><circle cx="61.3" cy="34.7" r="1.2" fill="#fff"/>' +
+          // Les oreilles triangulaires qui tombent le long des joues,
+          // avec le bout arrondi (attachées haut, bien écartées)
+          '<path d="M33 21 Q22 25 19 44 Q18 62 28 65 Q34 50 37 27 Z" fill="#2b2b2b" stroke="#000" stroke-width="1.2"/>' +
+          '<path d="M67 21 Q78 25 81 44 Q82 62 72 65 Q66 50 63 27 Z" fill="#2b2b2b" stroke="#000" stroke-width="1.2"/>' +
           '</svg>'
       },
       {
@@ -554,6 +651,9 @@
     // Noms utilisés pour ranger les infos dans la mémoire du téléphone
     const CLE_RECORD = "memory-myrtille-record";   // meilleur score
     const CLE_MODE = "memory-myrtille-mode";       // dernier mode choisi
+    // Le personnage qui saute quand on gagne
+    const MASCOTTE = "myrtille";
+
     const CLE_SON = "memory-myrtille-son";         // son activé ou non
 
     // Les deux modes de jeu : le nombre de paires sur le plateau
@@ -752,7 +852,8 @@
     // Le bouton cloche : couper ou remettre le son
     function afficherBoutonSon() {
       boutonSon.textContent = sonActif ? "🔔" : "🔕";
-      boutonSon.setAttribute("aria-label", sonActif ? "Couper le son" : "Remettre le son");
+      boutonSon.setAttribute("aria-label", sonActif ? "Couper les bruitages" : "Remettre les bruitages");
+      boutonSon.classList.toggle("eteint", !sonActif);
     }
 
     boutonSon.addEventListener("click", function () {
@@ -928,6 +1029,16 @@
 
       afficherRecord();
 
+      // On met le dessin du personnage dans la fenêtre de victoire
+      document.getElementById("mascotte").innerHTML =
+        CARTES.find(function (c) { return c.id === MASCOTTE; }).dessin;
+
+      // Toutes les cartes font la fête : elles sautent l'une après l'autre
+      document.querySelectorAll(".carte").forEach(function (carte, i) {
+        carte.style.setProperty("--retard", (0.5 + i * 0.06) + "s");
+        carte.classList.add("danse");
+      });
+
       // Petite pause pour laisser finir l'animation de la dernière carte
       attente = setTimeout(function () {
         fenetreVictoire.classList.add("visible");
@@ -955,7 +1066,38 @@
     // ===================================================================
     nouvellePartie();
     // ===================================================================
-    // 14. Le mode appli : une copie du jeu est gardée dans le téléphone
+    // 14. Le décor qui flotte derrière le jeu
+    // ===================================================================
+    function creerDecor(symboles) {
+      const decor = document.getElementById("decor");
+      for (let i = 0; i < 12; i++) {
+        const element = document.createElement("span");
+        const symbole = symboles[i % symboles.length];
+        const taille = 18 + Math.random() * 22;               // taille au hasard
+        if (symbole === "bulle") {
+          element.className = "bulle-decor";                  // une bulle dessinée
+          element.style.width = taille + "px";
+          element.style.height = taille + "px";
+        } else {
+          element.textContent = symbole;
+          element.style.fontSize = taille + "px";
+        }
+        element.style.left = Math.random() * 95 + "vw";        // position au hasard
+        element.style.animationDuration = 14 + Math.random() * 12 + "s";  // lent
+        element.style.animationDelay = -Math.random() * 20 + "s";         // déjà en route
+        decor.appendChild(element);
+      }
+    }
+
+    creerDecor(["💜", "💖", "⭐", "✨", "💙"]);
+
+    // ===================================================================
+    // 15. La petite musique de fond (voir le fichier musique.js)
+    // ===================================================================
+    initMusique(MELODIES.clairDeLune, document.getElementById("bouton-musique"));
+
+    // ===================================================================
+    // 16. Le mode appli : une copie du jeu est gardée dans le téléphone
     // pour pouvoir jouer même sans internet (voir le fichier sw.js)
     // ===================================================================
     if ("serviceWorker" in navigator) {

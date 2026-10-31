@@ -5,7 +5,7 @@
 
 // Le nom de la copie. Si on change les jeux, on peut changer ce numéro
 // pour forcer une copie toute neuve.
-const NOM_COPIE = "memory-myrtille-v1";
+const NOM_COPIE = "memory-myrtille-v2";
 
 // La liste des fichiers à garder dans le téléphone
 const FICHIERS = [
@@ -14,6 +14,7 @@ const FICHIERS = [
   "./myrtille.html",
   "./mer.html",
   "./dino.html",
+  "./musique.js",
   "./manifest.webmanifest",
   "./icone-180.png",
   "./icone-192.png",

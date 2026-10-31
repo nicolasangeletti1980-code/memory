@@ -44,6 +44,7 @@
       text-align: center;
       line-height: 1.15;
       margin: 8px 0 18px;
+      padding: 0 56px;   /* laisse la place au bouton de la musique */
     }
 
     .t-rose   { color: #ff6fb5; }
@@ -89,6 +90,17 @@
       background: #fff;
       border-radius: 18px;
       padding: 6px;
+      /* Le personnage se dandine doucement */
+      animation: dandiner 1.6s ease-in-out infinite alternate;
+    }
+
+    /* Chaque personnage bouge à son rythme */
+    .jeu-mer svg  { animation-delay: -0.5s; }
+    .jeu-dino svg { animation-delay: -1s; }
+
+    @keyframes dandiner {
+      from { transform: rotate(-5deg) translateY(0); }
+      to   { transform: rotate(5deg) translateY(-4px); }
     }
 
     .jeu strong {
@@ -129,6 +141,51 @@
       padding: 10px 14px;
     }
 
+    /* ===== Le bouton rond de la musique, en haut à droite ===== */
+    .rond {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      background: rgba(255, 255, 255, 0.8);
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .rond.eteint {
+      opacity: 0.55;
+    }
+
+    /* ===== Le décor qui flotte doucement derrière ===== */
+    .decor {
+      position: fixed;
+      inset: 0;
+      z-index: -1;            /* derrière tout le reste */
+      overflow: hidden;
+      pointer-events: none;   /* on ne peut pas le toucher */
+    }
+
+    .decor span {
+      position: absolute;
+      bottom: -60px;
+      opacity: 0.35;
+      animation: flotter linear infinite;
+    }
+
+    @keyframes flotter {
+      from { transform: translateY(0) rotate(0deg); }
+      to   { transform: translateY(-115vh) rotate(25deg); }
+    }
+
+    /* Si le téléphone demande moins d'animations, on les coupe */
+    @media (prefers-reduced-motion: reduce) {
+      .jeu svg, .decor span { animation: none; }
+    }
+
     /* Ces éléments sont cachés tant que le JavaScript ne les montre pas */
     .cache {
       display: none;
@@ -136,6 +193,12 @@
   </style>
 </head>
 <body>
+
+  <!-- Le décor animé (rempli par le JavaScript) -->
+  <div class="decor" id="decor" aria-hidden="true"></div>
+
+  <!-- Le bouton pour couper / remettre la musique -->
+  <button class="rond" id="bouton-musique" aria-label="Couper la musique">🎵</button>
 
   <h1>
     <span class="t-rose">Les Memory</span><br>
@@ -147,7 +210,7 @@
   <nav class="jeux">
     <a class="jeu jeu-myrtille" href="myrtille.html">
       <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M54 24 Q62 6 82 8 Q76 26 54 24Z" fill="#7fd27f" stroke="#43a24e" stroke-width="2"/><circle cx="50" cy="57" r="33" fill="#5b6fd6" stroke="#3d4aa8" stroke-width="2.5"/><ellipse cx="34" cy="44" rx="6" ry="10" fill="#fff" opacity="0.35" transform="rotate(-25 34 44)"/><polygon points="50,16 52.4,21.8 58.6,22.2 53.8,26.2 55.3,32.3 50,29 44.7,32.3 46.2,26.2 41.4,22.2 47.6,21.8" fill="#2e3680"/><circle cx="40" cy="56" r="3.5" fill="#1d1f4a"/><circle cx="60" cy="56" r="3.5" fill="#1d1f4a"/><path d="M43 65 q7 6 14 0" stroke="#1d1f4a" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="33" cy="64" rx="5" ry="3" fill="#ff8fc0" opacity="0.6"/><ellipse cx="67" cy="64" rx="5" ry="3" fill="#ff8fc0" opacity="0.6"/></svg>
-      <div><strong>Myrtille</strong><span>Mimi, nounours, citrouille…</span></div>
+      <div><strong>Myrtille</strong><span>Mimi, nounours, hovawart…</span></div>
     </a>
     <a class="jeu jeu-mer" href="mer.html">
       <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M22 52 L6 37 Q11 52 6 67 Z" fill="#ff7a1a" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/><path d="M36 34 Q50 20 64 34 Z" fill="#ff7a1a" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/><path d="M42 70 Q50 82 58 70 Z" fill="#ff7a1a" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/><ellipse cx="48" cy="52" rx="30" ry="20" fill="#ff7a1a" stroke="#2b2b2b" stroke-width="2"/><ellipse cx="38" cy="52" rx="5" ry="18.5" fill="#fff" stroke="#2b2b2b" stroke-width="2"/><ellipse cx="59" cy="52" rx="4.5" ry="17.5" fill="#fff" stroke="#2b2b2b" stroke-width="2"/><circle cx="68" cy="47" r="5.5" fill="#fff" stroke="#1d2b4a" stroke-width="1.5"/><circle cx="69" cy="47" r="3.3" fill="#1d2b4a"/><circle cx="70.155" cy="45.845" r="1.1549999999999998" fill="#fff"/><path d="M69.5 58 q3.5 3.15 7 0" stroke="#1d2b4a" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
@@ -170,6 +233,8 @@
     </p>
   </div>
 
+  <!-- La musique de fond, partagée par toutes les pages -->
+  <script src="musique.js"></script>
   <script>
     // ===== 1. Le mode appli : le jeu marche même sans internet =====
     // Le "service worker" est un petit programme qui garde une copie
@@ -210,6 +275,22 @@
     if (estIphone && !dejaInstalle) {
       document.getElementById("aide-iphone").classList.remove("cache");
     }
+
+    // ===== 4. Le décor : des petits symboles des 3 jeux qui flottent =====
+    const symboles = ["💜", "🐠", "🦕", "⭐", "🐚", "🥚", "💖"];
+    const decor = document.getElementById("decor");
+    for (let i = 0; i < 12; i++) {
+      const element = document.createElement("span");
+      element.textContent = symboles[i % symboles.length];
+      element.style.fontSize = 18 + Math.random() * 22 + "px";            // taille au hasard
+      element.style.left = Math.random() * 95 + "vw";                      // position au hasard
+      element.style.animationDuration = 14 + Math.random() * 12 + "s";    // lent
+      element.style.animationDelay = -Math.random() * 20 + "s";           // déjà en route
+      decor.appendChild(element);
+    }
+
+    // ===== 5. La petite musique : « Ah ! vous dirai-je, maman » =====
+    initMusique(MELODIES.vousDiraiJe, document.getElementById("bouton-musique"));
   </script>
 </body>
 </html>
