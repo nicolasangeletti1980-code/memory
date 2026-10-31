@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <!-- Cette ligne adapte la page à la largeur du téléphone (pas besoin de zoomer) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b4f6c">
+  <title>Memory de la Mer</title>
+
+  <style>
+    /* ===== Réglages généraux ===== */
+    * {
+      box-sizing: border-box;   /* les tailles incluent les bordures */
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      /* Fond dégradé bleu, comme l'océan */
+      background: linear-gradient(180deg, #0b4f6c 0%, #01295f 100%);
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* 100dvh = toute la hauteur visible de l'écran du téléphone */
+      min-height: 100dvh;
+      padding: 12px 16px;
+      /* Empêche la sélection de texte et le zoom par double-tap */
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== Titre ===== */
+    h1 {
+      font-size: 1.6rem;
+      margin: 4px 0 10px;
+      text-align: center;
+    }
+
+    /* ===== Barre avec le compteur de coups et le chrono ===== */
+    .infos {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      max-width: 520px;
+      margin-bottom: 12px;
+    }
+
+    .info {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 8px;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+
+    .info strong {
+      display: block;
+      font-size: 1.4rem;
+    }
+
+    /* ===== La grille de cartes ===== */
+    .plateau {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr); /* 4 colonnes */
+      gap: 10px;
+      /* La grille prend la plus petite de ces 3 tailles :
+         - la largeur de l'écran moins les marges
+         - la hauteur de l'écran moins la place du titre, des infos et du bouton
+         - 520 px maximum (pour les tablettes) */
+      width: min(100%, 100vh - 230px, 520px);  /* pour les vieux navigateurs */
+      width: min(100%, 100dvh - 230px, 520px);
+    }
+
+    /* ===== Une carte ===== */
+    .carte {
+      aspect-ratio: 1 / 1;      /* carte bien carrée */
+      perspective: 600px;       /* donne l'effet 3D au retournement */
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 0;
+    }
+
+    /* La partie qui tourne (elle contient le dos et la face) */
+    .carte-interieur {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.4s;
+      transform-style: preserve-3d;
+    }
+
+    /* Quand la carte a la classe "retournee", on la fait pivoter */
+    .carte.retournee .carte-interieur {
+      transform: rotateY(180deg);
+    }
+
+    /* Le dos et la face sont l'un sur l'autre */
+    .dos, .face {
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backface-visibility: hidden;          /* on ne voit pas l'arrière */
+      -webkit-backface-visibility: hidden;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Dos de la carte (ce qu'on voit avant de la toucher) */
+    .dos {
+      background: linear-gradient(135deg, #1fa2c4, #0e6e8c);
+      border: 3px solid rgba(255, 255, 255, 0.6);
+      font-size: 1.6rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Face de la carte (avec l'emoji) */
+    .face {
+      background: #fdf6e3;  /* couleur sable */
+      transform: rotateY(180deg);
+      font-size: clamp(1.8rem, 10vw, 3.2rem);
+    }
+
+    /* Carte trouvée : petit contour vert */
+    .carte.trouvee .face {
+      background: #d4f7dc;
+      box-shadow: 0 0 0 3px #3ccf6e;
+    }
+
+    /* ===== Bouton Rejouer ===== */
+    .bouton {
+      margin-top: 14px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      padding: 14px 32px;
+      border: none;
+      border-radius: 30px;
+      background: #ffb703;
+      color: #01295f;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .bouton:active {
+      transform: scale(0.96);
+    }
+
+    /* ===== Fenêtre de victoire ===== */
+    .victoire {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;               /* cachée au départ */
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    /* Quand elle a la classe "visible", on l'affiche */
+    .victoire.visible {
+      display: flex;
+    }
+
+    .victoire-boite {
+      background: #ffffff;
+      color: #01295f;
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+      width: 100%;
+      max-width: 340px;
+    }
+
+    .victoire-boite h2 {
+      font-size: 1.6rem;
+      margin-bottom: 12px;
+    }
+
+    .victoire-boite p {
+      margin: 6px 0;
+      font-size: 1.05rem;
+    }
+
+    .record {
+      color: #2a9d8f;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🌊 Memory de la Mer</h1>
+
+  <!-- Compteur de coups, chrono et meilleur score -->
+  <div class="infos">
+    <div class="info">Coups<strong id="coups">0</strong></div>
+    <div class="info">Temps<strong id="temps">0:00</strong></div>
+    <div class="info">Record<strong id="record">–</strong></div>
+  </div>
+
+  <!-- Les cartes seront ajoutées ici par le JavaScript -->
+  <div class="plateau" id="plateau"></div>
+
+  <button class="bouton" id="rejouer">Rejouer</button>
+
+  <!-- Fenêtre qui s'affiche quand on a gagné -->
+  <div class="victoire" id="victoire">
+    <div class="victoire-boite">
+      <h2>🎉 Bravo !</h2>
+      <p id="resultat"></p>
+      <p id="message-record"></p>
+      <button class="bouton" id="rejouer-victoire">Rejouer</button>
+    </div>
+  </div>
+
+  <script>
+    // ===== 1. Les emojis du jeu (8 différents = 8 paires) =====
+    const EMOJIS = ["🐟", "🦀", "🐙", "🐚", "🐬", "🐳", "🦈", "🐢"];
+
+    // Nom utilisé pour ranger le meilleur score dans la mémoire du téléphone
+    const CLE_RECORD = "memory-mer-record";
+
+    // ===== 2. On récupère les éléments de la page =====
+    const plateau = document.getElementById("plateau");
+    const affichageCoups = document.getElementById("coups");
+    const affichageTemps = document.getElementById("temps");
+    const affichageRecord = document.getElementById("record");
+    const fenetreVictoire = document.getElementById("victoire");
+    const texteResultat = document.getElementById("resultat");
+    const texteRecord = document.getElementById("message-record");
+
+    // ===== 3. Les variables qui changent pendant la partie =====
+    let premiereCarte = null;   // la 1re carte retournée
+    let deuxiemeCarte = null;   // la 2e carte retournée
+    let bloque = false;         // true = on attend, on ne peut pas toucher
+    let coups = 0;              // nombre de coups joués
+    let pairesTrouvees = 0;     // nombre de paires trouvées
+    let secondes = 0;           // temps écoulé
+    let chrono = null;          // le minuteur (null = arrêté)
+    let attente = null;         // le délai en cours (retournement ou victoire)
+
+    // ===== 4. Mélanger un tableau (méthode de Fisher-Yates) =====
+    // On parcourt le tableau de la fin vers le début
+    // et on échange chaque case avec une case au hasard avant elle.
+    function melanger(tableau) {
+      for (let i = tableau.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [tableau[i], tableau[j]] = [tableau[j], tableau[i]];
+      }
+      return tableau;
+    }
+
+    // ===== 5. Transformer des secondes en texte "m:ss" =====
+    function formaterTemps(total) {
+      const minutes = Math.floor(total / 60);
+      const sec = total % 60;
+      // padStart ajoute un 0 devant si besoin (ex : 5 -> "05")
+      return minutes + ":" + String(sec).padStart(2, "0");
+    }
+
+    // ===== 6. Lire et écrire le meilleur score =====
+    // On utilise "localStorage" : une petite mémoire du navigateur
+    // qui reste sur le téléphone même après fermeture.
+    // try/catch évite que le jeu plante si cette mémoire est bloquée.
+    function lireRecord() {
+      try {
+        const texte = localStorage.getItem(CLE_RECORD);
+        return texte ? JSON.parse(texte) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function sauverRecord(record) {
+      try {
+        localStorage.setItem(CLE_RECORD, JSON.stringify(record));
+      } catch (e) {
+        // Pas grave : le record ne sera simplement pas gardé
+      }
+    }
+
+    function afficherRecord() {
+      const record = lireRecord();
+      if (record) {
+        affichageRecord.textContent = record.coups + " coups";
+      } else {
+        affichageRecord.textContent = "–";
+      }
+    }
+
+    // ===== 7. Le chronomètre =====
+    function demarrerChrono() {
+      // setInterval lance une fonction toutes les 1000 ms (= 1 seconde)
+      chrono = setInterval(function () {
+        secondes++;
+        affichageTemps.textContent = formaterTemps(secondes);
+      }, 1000);
+    }
+
+    function arreterChrono() {
+      clearInterval(chrono);
+      chrono = null;
+    }
+
+    // ===== 8. Créer une nouvelle partie =====
+    function nouvellePartie() {
+      // On remet tout à zéro
+      arreterChrono();
+      clearTimeout(attente);    // annule un retournement encore en attente
+      premiereCarte = null;
+      deuxiemeCarte = null;
+      bloque = false;
+      coups = 0;
+      pairesTrouvees = 0;
+      secondes = 0;
+      affichageCoups.textContent = "0";
+      affichageTemps.textContent = "0:00";
+      fenetreVictoire.classList.remove("visible");
+      afficherRecord();
+
+      // On double la liste d'emojis (pour faire les paires) et on mélange
+      const cartes = melanger([...EMOJIS, ...EMOJIS]);
+
+      // On vide le plateau puis on crée les 16 cartes
+      plateau.innerHTML = "";
+      cartes.forEach(function (emoji) {
+        const carte = document.createElement("button");
+        carte.className = "carte";
+        carte.dataset.emoji = emoji;   // on garde l'emoji "caché" dans la carte
+        carte.setAttribute("aria-label", "Carte cachée");
+        carte.innerHTML =
+          '<div class="carte-interieur">' +
+            '<div class="dos">?</div>' +
+            '<div class="face">' + emoji + '</div>' +
+          '</div>';
+        carte.addEventListener("click", function () {
+          toucherCarte(carte);
+        });
+        plateau.appendChild(carte);
+      });
+    }
+
+    // ===== 9. Quand on touche une carte =====
+    function toucherCarte(carte) {
+      // On ignore le toucher si :
+      // - on attend que deux cartes se retournent
+      // - la carte est déjà retournée ou déjà trouvée
+      if (bloque || carte.classList.contains("retournee")) {
+        return;
+      }
+
+      // Le chrono démarre au tout premier toucher
+      if (chrono === null && secondes === 0) {
+        demarrerChrono();
+      }
+
+      // On retourne la carte (le CSS fait l'animation)
+      carte.classList.add("retournee");
+      carte.setAttribute("aria-label", carte.dataset.emoji);
+
+      if (premiereCarte === null) {
+        // C'est la 1re carte du coup : on la garde en mémoire
+        premiereCarte = carte;
+        return;
+      }
+
+      // C'est la 2e carte : un coup est terminé
+      deuxiemeCarte = carte;
+      coups++;
+      affichageCoups.textContent = coups;
+
+      if (premiereCarte.dataset.emoji === deuxiemeCarte.dataset.emoji) {
+        // Les deux cartes sont identiques : elles restent visibles
+        premiereCarte.classList.add("trouvee");
+        deuxiemeCarte.classList.add("trouvee");
+        pairesTrouvees++;
+        premiereCarte = null;
+        deuxiemeCarte = null;
+
+        // Toutes les paires trouvées ? C'est gagné !
+        if (pairesTrouvees === EMOJIS.length) {
+          victoire();
+        }
+      } else {
+        // Pas identiques : on bloque, puis on les retourne après 1 seconde
+        bloque = true;
+        attente = setTimeout(function () {
+          premiereCarte.classList.remove("retournee");
+          deuxiemeCarte.classList.remove("retournee");
+          premiereCarte.setAttribute("aria-label", "Carte cachée");
+          deuxiemeCarte.setAttribute("aria-label", "Carte cachée");
+          premiereCarte = null;
+          deuxiemeCarte = null;
+          bloque = false;
+        }, 1000);
+      }
+    }
+
+    // ===== 10. Fin de partie =====
+    function victoire() {
+      arreterChrono();
+
+      texteResultat.textContent =
+        "Gagné en " + coups + " coups et " + formaterTemps(secondes) + ".";
+
+      // Meilleur score = le moins de coups.
+      // En cas d'égalité, le temps le plus court gagne.
+      const ancien = lireRecord();
+      const nouveauRecord =
+        ancien === null ||
+        coups < ancien.coups ||
+        (coups === ancien.coups && secondes < ancien.secondes);
+
+      if (nouveauRecord) {
+        sauverRecord({ coups: coups, secondes: secondes });
+        texteRecord.innerHTML = '<span class="record">🏆 Nouveau record !</span>';
+      } else {
+        texteRecord.textContent =
+          "Record : " + ancien.coups + " coups en " + formaterTemps(ancien.secondes);
+      }
+
+      afficherRecord();
+
+      // Petite pause pour laisser finir l'animation de la dernière carte
+      attente = setTimeout(function () {
+        fenetreVictoire.classList.add("visible");
+      }, 600);
+    }
+
+    // ===== 11. Les boutons "Rejouer" =====
+    document.getElementById("rejouer").addEventListener("click", nouvellePartie);
+    document.getElementById("rejouer-victoire").addEventListener("click", nouvellePartie);
+
+    // ===== 12. On lance la première partie au chargement de la page =====
+    nouvellePartie();
+  </script>
+</body>
+</html>
