@@ -117,6 +117,10 @@
   <p class="sous-titre">Mesurez avec la caméra de votre téléphone.</p>
   <button id="btn-demarrer" type="button" disabled>Vérification…</button>
   <div id="msg-compat" class="encadre" hidden></div>
+  <section id="diag" class="encadre" hidden>
+    <h2 style="color:#FFD400;font-size:22px;margin:0 0 6px">Diagnostic (à m'envoyer en capture)</h2>
+    <pre id="diag-texte" style="white-space:pre-wrap;font-size:15px;margin:0;font-family:monospace"></pre>
+  </section>
   <section class="historique encadre" aria-live="polite">
     <h2>Historique de la session</h2>
     <div class="liste-historique"></div>
@@ -173,6 +177,22 @@ const elConsigne = $('consigne');
 const elEtiquettes = $('etiquettes');
 const panneauHisto = $('panneau-historique');
 const libHisto = $('lib-historique');
+
+/* ---------- Diagnostic ---------- */
+const journal = [];
+function diag(msg) {
+  const t = new Date().toLocaleTimeString('fr-FR');
+  journal.push(t + ' ' + msg);
+  if (journal.length > 40) journal.shift();
+  $('diag-texte').textContent = journal.join('\n') + '\n' + compteurs();
+  $('diag').hidden = false;
+}
+let nbImages = 0, nbImagesAvecSurface = 0;
+function compteurs() {
+  return 'Images affichées : ' + nbImages + ' | dont avec surface : ' + nbImagesAvecSurface;
+}
+window.addEventListener('error', (e) => diag('ERREUR : ' + e.message));
+window.addEventListener('unhandledrejection', (e) => diag('ERREUR (promesse) : ' + (e.reason && (e.reason.name + ' ' + e.reason.message))));
 
 const LIEN_ARCORE = 'https://play.google.com/store/apps/details?id=com.google.ar.core';
 
@@ -409,38 +429,49 @@ const _pos = new THREE.Vector3();
 
 async function demarrer() {
   btnDemarrer.disabled = true;
+  journal.length = 0; nbImages = 0; nbImagesAvecSurface = 0;
+  diag('Navigateur : ' + navigator.userAgent);
   try {
     session = await navigator.xr.requestSession('immersive-ar', {
       requiredFeatures: ['hit-test'],
       optionalFeatures: ['dom-overlay'],
       domOverlay: { root: overlay }
     });
+    diag('1. Session RA ouverte');
   } catch (e) {
+    diag('1. ÉCHEC ouverture session : ' + (e && (e.name + ' ' + e.message)));
     afficherIncompat('Impossible de démarrer la réalité augmentée (' + (e && e.name ? e.name : 'erreur') + ').' + AIDE_ARCORE);
     btnDemarrer.disabled = false;
     btnDemarrer.textContent = 'Réessayer';
     return;
   }
 
+  diag('2. Superposition (boutons) : ' + (session.domOverlayState ? 'accordée, type ' + session.domOverlayState.type : 'NON accordée'));
+  overlay.classList.add('actif');
+  surfaceTrouvee = false;
+  majTextes();
+  rendreHistorique();
+
   session.addEventListener('end', quandSessionTerminee);
   session.addEventListener('select', quandSelection);
 
   try {
     await renderer.xr.setSession(session);
-    const espaceVue = await session.requestReferenceSpace('viewer');
-    sourceHitTest = await session.requestHitTestSource({ space: espaceVue });
+    diag('3. Rendu 3D branché sur la session');
   } catch (e) {
-    msgCompat.innerHTML = 'La détection des surfaces n\'a pas pu démarrer (' + (e && e.name ? e.name : 'erreur') + '). Réessayez.' + AIDE_ARCORE;
-    msgCompat.hidden = false;
+    diag('3. ÉCHEC rendu 3D : ' + (e && (e.name + ' ' + e.message)));
     session.end();
-    return;
   }
+}
 
-  overlay.classList.add('actif');
-  surfaceTrouvee = false;
-  majTextes();
-  rendreHistorique();
-  renderer.setAnimationLoop(boucle);
+// Demande de la détection des surfaces depuis la boucle d'affichage (comme l'exemple officiel)
+let demandeHitTestFaite = false;
+function demanderHitTest(sess) {
+  demandeHitTestFaite = true;
+  sess.requestReferenceSpace('viewer')
+    .then((espaceVue) => sess.requestHitTestSource({ space: espaceVue }))
+    .then((source) => { sourceHitTest = source; diag('4. Détection des surfaces prête'); })
+    .catch((e) => diag('4. ÉCHEC détection des surfaces : ' + (e && (e.name + ' ' + e.message))));
 }
 
 function quandSelection() {
@@ -450,8 +481,9 @@ function quandSelection() {
 }
 
 function quandSessionTerminee() {
-  renderer.setAnimationLoop(null);
-  if (sourceHitTest) { sourceHitTest.cancel(); sourceHitTest = null; }
+  diag('5. Session terminée (' + compteurs() + ')');
+  demandeHitTestFaite = false;
+  if (sourceHitTest) { try { sourceHitTest.cancel(); } catch (e) {} sourceHitTest = null; }
   session = null;
   toutEffacer();
   reticule.visible = false;
@@ -462,6 +494,12 @@ function quandSessionTerminee() {
 }
 
 function boucle(temps, frame) {
+  if (frame) {
+    nbImages++;
+    if (nbImages === 1) diag('Première image RA reçue');
+    const sess = renderer.xr.getSession();
+    if (sess && !demandeHitTestFaite) demanderHitTest(sess);
+  }
   if (frame && sourceHitTest) {
     const espaceRef = renderer.xr.getReferenceSpace();
     const resultats = frame.getHitTestResults(sourceHitTest);
@@ -471,7 +509,9 @@ function boucle(temps, frame) {
       if (pose) {
         reticule.matrix.fromArray(pose.transform.matrix);
         reticule.visible = true;
+        if (!surfaceTrouvee) diag('Première surface détectée');
         surfaceTrouvee = true;
+        nbImagesAvecSurface++;
       } else {
         reticule.visible = false;
       }
@@ -524,6 +564,7 @@ window.addEventListener('resize', () => {
 });
 
 rendreHistorique();
+renderer.setAnimationLoop(boucle);
 verifierCompatibilite();
 </script>
 </body>
