@@ -77,7 +77,7 @@
       background: rgba(255, 255, 255, 0.75);
       border: 2px solid var(--blanc);
       border-radius: 16px;
-      padding: 6px;
+      padding: 6px 4px;
       text-align: center;
       font-size: 0.85rem;
       box-shadow: 0 3px 8px rgba(155, 107, 255, 0.2);
@@ -85,8 +85,21 @@
 
     .info strong {
       display: block;
-      font-size: 1.3rem;
+      white-space: nowrap;   /* le record reste sur une seule ligne */
+      /* taille qui s'adapte : plus petite sur les petits écrans */
+      font-size: clamp(0.95rem, 4.6vw, 1.3rem);
       color: var(--rose);
+    }
+
+    /* Petit bouton rond pour couper / remettre le son */
+    .bouton-son {
+      flex: 0 0 46px;
+      font-size: 1.5rem;
+      background: rgba(255, 255, 255, 0.75);
+      border: 2px solid var(--blanc);
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(155, 107, 255, 0.2);
     }
 
     /* ===== La grille de cartes ===== */
@@ -195,6 +208,49 @@
       transform: scale(0.95);
     }
 
+    /* ===== Barre du bas : choix du mode + bouton Rejouer ===== */
+    .commandes {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .commandes .bouton {
+      margin-top: 0;
+      padding: 12px 24px;
+    }
+
+    /* Les deux boutons "Petit" / "Grand" collés l'un à l'autre */
+    .modes {
+      display: flex;
+      background: rgba(255, 255, 255, 0.75);
+      border: 2px solid var(--blanc);
+      border-radius: 30px;
+      padding: 3px;
+      box-shadow: 0 3px 8px rgba(155, 107, 255, 0.2);
+    }
+
+    .mode {
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: bold;
+      min-height: 44px;            /* assez grand pour le doigt */
+      padding: 0 16px;
+      border: none;
+      border-radius: 26px;
+      background: none;
+      color: var(--violet-fonce);
+      cursor: pointer;
+    }
+
+    /* Le mode choisi est en bleu clair */
+    .mode.actif {
+      background: var(--bleu-clair);
+      color: #1f5f99;
+    }
+
     /* ===== Fenêtre de victoire ===== */
     .victoire {
       position: fixed;
@@ -279,12 +335,20 @@
     <div class="info">Coups<strong id="coups">0</strong></div>
     <div class="info">Temps<strong id="temps">0:00</strong></div>
     <div class="info">Record<strong id="record">–</strong></div>
+    <button class="bouton-son" id="bouton-son" aria-label="Couper le son">🔔</button>
   </div>
 
   <!-- Les cartes seront ajoutées ici par le JavaScript -->
   <div class="plateau" id="plateau"></div>
 
-  <button class="bouton" id="rejouer">Rejouer</button>
+  <!-- Choix du mode et bouton Rejouer -->
+  <div class="commandes">
+    <div class="modes">
+      <button class="mode" data-mode="petit">Petit</button>
+      <button class="mode" data-mode="grand">Grand</button>
+    </div>
+    <button class="bouton" id="rejouer">Rejouer</button>
+  </div>
 
   <!-- Fenêtre qui s'affiche quand on a gagné -->
   <div class="victoire" id="victoire">
@@ -466,8 +530,14 @@
       '<path d="M50 88 C10 60 18 18 50 38 C82 18 90 60 50 88Z" fill="#fff" opacity="0.9"/>' +
       '</svg>';
 
-    // Nom utilisé pour ranger le meilleur score dans la mémoire du téléphone
-    const CLE_RECORD = "memory-myrtille-record";
+    // Noms utilisés pour ranger les infos dans la mémoire du téléphone
+    const CLE_RECORD = "memory-myrtille-record";   // meilleur score
+    const CLE_MODE = "memory-myrtille-mode";       // dernier mode choisi
+    const CLE_SON = "memory-myrtille-son";         // son activé ou non
+
+    // Les deux modes de jeu : le nombre de paires sur le plateau
+    // Petit = 6 paires (12 cartes), Grand = 8 paires (16 cartes)
+    const MODES = { petit: 6, grand: 8 };
 
     // ===================================================================
     // 2. On récupère les éléments de la page
@@ -491,6 +561,7 @@
     let secondes = 0;           // temps écoulé
     let chrono = null;          // le minuteur (null = arrêté)
     let attente = null;         // le délai en cours (retournement ou victoire)
+    let nombrePaires = 8;       // nombre de paires de la partie en cours
 
     // ===================================================================
     // 4. Mélanger un tableau (méthode de Fisher-Yates)
@@ -516,14 +587,38 @@
     }
 
     // ===================================================================
-    // 6. Lire et écrire le meilleur score
+    // 6. La mémoire du téléphone (record, mode, son)
     // On utilise "localStorage" : une petite mémoire du navigateur
     // qui reste sur le téléphone même après fermeture.
     // try/catch évite que le jeu plante si cette mémoire est bloquée.
     // ===================================================================
-    function lireRecord() {
+    function lireMemoire(cle) {
       try {
-        const texte = localStorage.getItem(CLE_RECORD);
+        return localStorage.getItem(cle);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function ecrireMemoire(cle, valeur) {
+      try {
+        localStorage.setItem(cle, valeur);
+      } catch (e) {
+        // Pas grave : l'info ne sera simplement pas gardée
+      }
+    }
+
+    // On reprend le dernier mode choisi (Grand si rien n'est enregistré)
+    let mode = lireMemoire(CLE_MODE) === "petit" ? "petit" : "grand";
+
+    // Chaque mode a son propre record
+    function cleRecord() {
+      return mode === "grand" ? CLE_RECORD : CLE_RECORD + "-petit";
+    }
+
+    function lireRecord() {
+      const texte = lireMemoire(cleRecord());
+      try {
         return texte ? JSON.parse(texte) : null;
       } catch (e) {
         return null;
@@ -531,11 +626,7 @@
     }
 
     function sauverRecord(record) {
-      try {
-        localStorage.setItem(CLE_RECORD, JSON.stringify(record));
-      } catch (e) {
-        // Pas grave : le record ne sera simplement pas gardé
-      }
+      ecrireMemoire(cleRecord(), JSON.stringify(record));
     }
 
     function afficherRecord() {
@@ -564,6 +655,95 @@
     }
 
     // ===================================================================
+    // 7 bis. Les sons de clochette de fée
+    // Aucun fichier son : le téléphone fabrique lui-même les notes
+    // grâce à "Web Audio" (un petit synthétiseur intégré au navigateur).
+    // ===================================================================
+    let audio = null;                              // le synthétiseur
+    let sonActif = lireMemoire(CLE_SON) !== "non"; // son activé par défaut
+    const boutonSon = document.getElementById("bouton-son");
+
+    // Le synthétiseur ne peut démarrer qu'après un toucher de l'écran :
+    // on le prépare donc au premier toucher de carte.
+    function preparerAudio() {
+      if (audio === null) {
+        const Synthe = window.AudioContext || window.webkitAudioContext;
+        if (!Synthe) {
+          return null;   // navigateur trop ancien : on joue sans son
+        }
+        audio = new Synthe();
+      }
+      if (audio.state === "suspended") {
+        audio.resume();
+      }
+      return audio;
+    }
+
+    // Joue UNE note de clochette.
+    // Une vraie cloche ne fait pas un son "pur" : elle mélange une note
+    // principale et des notes plus aiguës, plus discrètes.
+    // - frequence : la hauteur de la note (plus c'est grand, plus c'est aigu)
+    // - debut : dans combien de secondes la note commence
+    // - duree : combien de temps la note résonne
+    // - volume : de 0 (muet) à 1 (très fort)
+    function note(frequence, debut, duree, volume) {
+      const t = audio.currentTime + debut;
+      const couches = [
+        [1, volume],            // la note principale
+        [2.76, volume * 0.3],   // une note plus aiguë, typique des cloches
+        [5.4, volume * 0.12]    // une petite brillance tout en haut
+      ];
+      couches.forEach(function (couche) {
+        const oscillateur = audio.createOscillator();  // fabrique le son
+        const gain = audio.createGain();               // règle le volume
+        oscillateur.type = "sine";
+        oscillateur.frequency.value = frequence * couche[0];
+        // Le son monte très vite puis s'éteint doucement, comme une cloche
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(couche[1], t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + duree);
+        oscillateur.connect(gain);
+        gain.connect(audio.destination);               // vers le haut-parleur
+        oscillateur.start(t);
+        oscillateur.stop(t + duree + 0.05);
+      });
+    }
+
+    // Paire trouvée : 3 petites notes qui montent (mi, sol, do)
+    function sonPaire() {
+      if (!sonActif || !preparerAudio()) return;
+      [1318.5, 1568, 2093].forEach(function (frequence, i) {
+        note(frequence, i * 0.07, 0.9, 0.15);
+      });
+    }
+
+    // Victoire : une cascade de notes qui montent, puis un accord qui scintille
+    function sonVictoire() {
+      if (!sonActif || !preparerAudio()) return;
+      [1046.5, 1318.5, 1568, 2093, 2637, 3136].forEach(function (frequence, i) {
+        note(frequence, i * 0.11, 1.2, 0.13);
+      });
+      [2093, 2637, 3136].forEach(function (frequence) {
+        note(frequence, 0.8, 2, 0.08);
+      });
+    }
+
+    // Le bouton cloche : couper ou remettre le son
+    function afficherBoutonSon() {
+      boutonSon.textContent = sonActif ? "🔔" : "🔕";
+      boutonSon.setAttribute("aria-label", sonActif ? "Couper le son" : "Remettre le son");
+    }
+
+    boutonSon.addEventListener("click", function () {
+      sonActif = !sonActif;
+      ecrireMemoire(CLE_SON, sonActif ? "oui" : "non");
+      afficherBoutonSon();
+      sonPaire();   // petit son pour confirmer que c'est remis
+    });
+
+    afficherBoutonSon();
+
+    // ===================================================================
     // 8. Créer une nouvelle partie
     // ===================================================================
     function nouvellePartie() {
@@ -579,10 +759,22 @@
       affichageCoups.textContent = "0";
       affichageTemps.textContent = "0:00";
       fenetreVictoire.classList.remove("visible");
+      // On enlève les confettis qui tomberaient encore
+      document.querySelectorAll(".confetti").forEach(function (c) { c.remove(); });
       afficherRecord();
 
+      // On allume le bouton du mode choisi (Petit ou Grand)
+      document.querySelectorAll(".mode").forEach(function (bouton) {
+        bouton.classList.toggle("actif", bouton.dataset.mode === mode);
+      });
+
+      // On tire au hasard les dessins de la partie
+      // (en mode Petit, 6 dessins sur les 8)
+      nombrePaires = MODES[mode];
+      const choix = melanger([...CARTES]).slice(0, nombrePaires);
+
       // On double la liste des cartes (pour faire les paires) et on mélange
-      const paquet = melanger([...CARTES, ...CARTES]);
+      const paquet = melanger([...choix, ...choix]);
 
       // On vide le plateau puis on crée les 16 cartes
       plateau.innerHTML = "";
@@ -615,6 +807,11 @@
         return;
       }
 
+      // On réveille le synthétiseur (il a besoin d'un toucher pour démarrer)
+      if (sonActif) {
+        preparerAudio();
+      }
+
       // Le chrono démarre au tout premier toucher
       if (chrono === null && secondes === 0) {
         demarrerChrono();
@@ -644,8 +841,11 @@
         deuxiemeCarte = null;
 
         // Toutes les paires trouvées ? C'est gagné !
-        if (pairesTrouvees === CARTES.length) {
+        if (pairesTrouvees === nombrePaires) {
+          sonVictoire();
           victoire();
+        } else {
+          sonPaire();
         }
       } else {
         // Pas identiques : on bloque, puis on les retourne après 1 seconde
@@ -719,6 +919,15 @@
     // ===================================================================
     document.getElementById("rejouer").addEventListener("click", nouvellePartie);
     document.getElementById("rejouer-victoire").addEventListener("click", nouvellePartie);
+
+    // Les boutons "Petit" et "Grand" : on change de mode et on relance
+    document.querySelectorAll(".mode").forEach(function (bouton) {
+      bouton.addEventListener("click", function () {
+        mode = bouton.dataset.mode;
+        ecrireMemoire(CLE_MODE, mode);
+        nouvellePartie();
+      });
+    });
 
     // ===================================================================
     // 13. On lance la première partie au chargement de la page
