@@ -111,8 +111,8 @@
          - la largeur de l'écran moins les marges
          - la hauteur de l'écran moins la place du titre, des infos et du bouton
          - 520 px maximum (pour les tablettes) */
-      width: min(100%, 100vh - 230px, 520px);  /* pour les vieux navigateurs */
-      width: min(100%, 100dvh - 230px, 520px);
+      width: min(100%, 100vh - 260px, 520px);  /* pour les vieux navigateurs */
+      width: min(100%, 100dvh - 260px, 520px);
     }
 
     /* ===== Une carte ===== */
@@ -251,6 +251,16 @@
       color: #1f5f99;
     }
 
+    /* ===== Petit lien vers l'autre jeu ===== */
+    .lien-jeu {
+      color: #1f5f99;
+      margin-top: 6px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      text-decoration: none;
+      padding: 8px 14px;   /* zone assez grande pour le doigt */
+    }
+
     /* ===== Fenêtre de victoire ===== */
     .victoire {
       position: fixed;
@@ -349,6 +359,9 @@
     </div>
     <button class="bouton" id="rejouer">Rejouer</button>
   </div>
+
+  <!-- Lien vers l'autre jeu -->
+  <a class="lien-jeu" href="mer.html">🌊 Jouer au Memory de la Mer</a>
 
   <!-- Fenêtre qui s'affiche quand on a gagné -->
   <div class="victoire" id="victoire">
