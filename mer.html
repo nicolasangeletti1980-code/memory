@@ -7,6 +7,14 @@
   <meta name="theme-color" content="#bdf0ff">
   <title>Memory de la Mer</title>
 
+  <!-- Pour installer le jeu comme une appli sur l'écran d'accueil -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icone-192.png">
+  <link rel="apple-touch-icon" href="icone-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Memory">
+
   <style>
     /* ===== Les couleurs du jeu (on les change ici, une seule fois) ===== */
     :root {
@@ -360,8 +368,8 @@
     <button class="bouton" id="rejouer">Rejouer</button>
   </div>
 
-  <!-- Lien vers l'autre jeu -->
-  <a class="lien-jeu" href="index.html">💜 Jouer au Memory de Myrtille</a>
+  <!-- Lien vers la page d'accueil (le choix des jeux) -->
+  <a class="lien-jeu" href="index.html">🏠 Choisir un autre jeu</a>
 
   <!-- Fenêtre qui s'affiche quand on a gagné -->
   <div class="victoire" id="victoire">
@@ -969,6 +977,13 @@
     // 13. On lance la première partie au chargement de la page
     // ===================================================================
     nouvellePartie();
+    // ===================================================================
+    // 14. Le mode appli : une copie du jeu est gardée dans le téléphone
+    // pour pouvoir jouer même sans internet (voir le fichier sw.js)
+    // ===================================================================
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    }
   </script>
 </body>
 </html>

@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <!-- Cette ligne adapte la page à la largeur du téléphone (pas besoin de zoomer) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffc2e2">
+  <title>Memory de Myrtille</title>
+
+  <!-- Pour installer le jeu comme une appli sur l'écran d'accueil -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icone-192.png">
+  <link rel="apple-touch-icon" href="icone-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Memory">
+
+  <style>
+    /* ===== Les couleurs du jeu (on les change ici, une seule fois) ===== */
+    :root {
+      --rose: #ff6fb5;
+      --rose-clair: #ffd6ec;
+      --bleu-clair: #a9dcff;
+      --violet: #9b6bff;
+      --violet-fonce: #5b3a8c;
+      --blanc: #ffffff;
+    }
+
+    /* ===== Réglages généraux ===== */
+    * {
+      box-sizing: border-box;   /* les tailles incluent les bordures */
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      /* Police arrondie, plus douce pour les enfants */
+      font-family: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
+      /* Fond dégradé rose -> bleu clair -> violet clair */
+      background: linear-gradient(160deg, #ffd6ec 0%, #d9efff 50%, #e7dcff 100%);
+      color: var(--violet-fonce);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* 100dvh = toute la hauteur visible de l'écran du téléphone */
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: 12px 16px;
+      overflow-x: hidden;
+      /* Empêche la sélection de texte et le zoom par double-tap */
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== Titre ===== */
+    h1 {
+      font-size: 1.7rem;
+      margin: 4px 0 10px;
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    /* Chaque mot du titre a sa couleur */
+    .t-rose   { color: var(--rose); }
+    .t-violet { color: var(--violet); }
+    .t-bleu   { color: #3aa0e8; }
+
+    /* ===== Barre avec le compteur de coups, le chrono et le record ===== */
+    .infos {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      max-width: 520px;
+      margin-bottom: 12px;
+    }
+
+    .info {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.75);
+      border: 2px solid var(--blanc);
+      border-radius: 16px;
+      padding: 6px 4px;
+      text-align: center;
+      font-size: 0.85rem;
+      box-shadow: 0 3px 8px rgba(155, 107, 255, 0.2);
+    }
+
+    .info strong {
+      display: block;
+      white-space: nowrap;   /* le record reste sur une seule ligne */
+      /* taille qui s'adapte : plus petite sur les petits écrans */
+      font-size: clamp(0.95rem, 4.6vw, 1.3rem);
+      color: var(--rose);
+    }
+
+    /* Petit bouton rond pour couper / remettre le son */
+    .bouton-son {
+      flex: 0 0 46px;
+      font-size: 1.5rem;
+      background: rgba(255, 255, 255, 0.75);
+      border: 2px solid var(--blanc);
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(155, 107, 255, 0.2);
+    }
+
+    /* ===== La grille de cartes ===== */
+    .plateau {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr); /* 4 colonnes */
+      gap: 10px;
+      /* La grille prend la plus petite de ces 3 tailles :
+         - la largeur de l'écran moins les marges
+         - la hauteur de l'écran moins la place du titre, des infos et du bouton
+         - 520 px maximum (pour les tablettes) */
+      width: min(100%, 100vh - 260px, 520px);  /* pour les vieux navigateurs */
+      width: min(100%, 100dvh - 260px, 520px);
+    }
+
+    /* ===== Une carte ===== */
+    .carte {
+      aspect-ratio: 1 / 1;      /* carte bien carrée */
+      perspective: 600px;       /* donne l'effet 3D au retournement */
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 0;
+    }
+
+    /* La partie qui tourne (elle contient le dos et la face) */
+    .carte-interieur {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.45s;
+      transform-style: preserve-3d;
+    }
+
+    /* Quand la carte a la classe "retournee", on la fait pivoter */
+    .carte.retournee .carte-interieur {
+      transform: rotateY(180deg);
+    }
+
+    /* Le dos et la face sont l'un sur l'autre */
+    .dos, .face {
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backface-visibility: hidden;          /* on ne voit pas l'arrière */
+      -webkit-backface-visibility: hidden;
+      border: 3px solid var(--blanc);
+      box-shadow: 0 4px 10px rgba(155, 107, 255, 0.3);
+    }
+
+    /* Dos de la carte : dégradé rose -> violet avec des petits pois */
+    .dos {
+      background-image:
+        radial-gradient(rgba(255, 255, 255, 0.35) 2px, transparent 2.5px),
+        linear-gradient(135deg, #ff9cd0, #b38cff);
+      background-size: 14px 14px, 100% 100%;
+    }
+
+    /* Le petit cœur blanc au milieu du dos */
+    .dos svg {
+      width: 42%;
+      height: 42%;
+    }
+
+    /* Face de la carte (avec le dessin) */
+    .face {
+      transform: rotateY(180deg);
+      padding: 6%;
+    }
+
+    .face svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Carte trouvée : contour rose et petit saut de joie */
+    .carte.trouvee .face {
+      border-color: var(--rose);
+      animation: saut 0.5s ease 0.45s;
+    }
+
+    @keyframes saut {
+      0%, 100% { transform: rotateY(180deg) scale(1); }
+      50%      { transform: rotateY(180deg) scale(1.12); }
+    }
+
+    /* ===== Boutons ===== */
+    .bouton {
+      margin-top: 14px;
+      font-family: inherit;
+      font-size: 1.15rem;
+      font-weight: bold;
+      padding: 14px 34px;
+      border: 3px solid var(--blanc);
+      border-radius: 30px;
+      background: linear-gradient(135deg, var(--rose), var(--violet));
+      color: var(--blanc);
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(155, 107, 255, 0.4);
+    }
+
+    .bouton:active {
+      transform: scale(0.95);
+    }
+
+    /* ===== Barre du bas : choix du mode + bouton Rejouer ===== */
+    .commandes {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .commandes .bouton {
+      margin-top: 0;
+      padding: 12px 24px;
+    }
+
+    /* Les deux boutons "Petit" / "Grand" collés l'un à l'autre */
+    .modes {
+      display: flex;
+      background: rgba(255, 255, 255, 0.75);
+      border: 2px solid var(--blanc);
+      border-radius: 30px;
+      padding: 3px;
+      box-shadow: 0 3px 8px rgba(155, 107, 255, 0.2);
+    }
+
+    .mode {
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: bold;
+      min-height: 44px;            /* assez grand pour le doigt */
+      padding: 0 16px;
+      border: none;
+      border-radius: 26px;
+      background: none;
+      color: var(--violet-fonce);
+      cursor: pointer;
+    }
+
+    /* Le mode choisi est en bleu clair */
+    .mode.actif {
+      background: var(--bleu-clair);
+      color: #1f5f99;
+    }
+
+    /* ===== Petit lien vers l'autre jeu ===== */
+    .lien-jeu {
+      color: #1f5f99;
+      margin-top: 6px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      text-decoration: none;
+      padding: 8px 14px;   /* zone assez grande pour le doigt */
+    }
+
+    /* ===== Fenêtre de victoire ===== */
+    .victoire {
+      position: fixed;
+      inset: 0;
+      background: rgba(91, 58, 140, 0.45);
+      display: none;               /* cachée au départ */
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 10;
+    }
+
+    /* Quand elle a la classe "visible", on l'affiche */
+    .victoire.visible {
+      display: flex;
+    }
+
+    .victoire-boite {
+      background: var(--blanc);
+      border: 4px solid var(--rose-clair);
+      border-radius: 24px;
+      padding: 24px;
+      text-align: center;
+      width: 100%;
+      max-width: 340px;
+      animation: apparition 0.4s ease;
+    }
+
+    @keyframes apparition {
+      from { transform: scale(0.6); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    .victoire-boite h2 {
+      font-size: 1.7rem;
+      margin-bottom: 12px;
+      color: var(--rose);
+    }
+
+    .victoire-boite p {
+      margin: 6px 0;
+      font-size: 1.05rem;
+    }
+
+    .record {
+      color: var(--violet);
+      font-weight: bold;
+    }
+
+    /* ===== Confettis (petits cœurs et étoiles qui tombent) ===== */
+    .confetti {
+      position: fixed;
+      top: -40px;
+      font-size: 22px;
+      pointer-events: none;   /* on peut toucher "à travers" */
+      z-index: 20;
+      animation: chute linear forwards;
+    }
+
+    @keyframes chute {
+      to { transform: translateY(110vh) rotate(360deg); }
+    }
+
+    /* Si le téléphone demande moins d'animations, on les coupe */
+    @media (prefers-reduced-motion: reduce) {
+      .carte-interieur { transition: none; }
+      .carte.trouvee .face, .victoire-boite { animation: none; }
+      .confetti { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>
+    <span class="t-rose">Memory</span>
+    <span class="t-bleu">de</span>
+    <span class="t-violet">Myrtille</span>
+  </h1>
+
+  <!-- Compteur de coups, chrono et meilleur score -->
+  <div class="infos">
+    <div class="info">Coups<strong id="coups">0</strong></div>
+    <div class="info">Temps<strong id="temps">0:00</strong></div>
+    <div class="info">Record<strong id="record">–</strong></div>
+    <button class="bouton-son" id="bouton-son" aria-label="Couper le son">🔔</button>
+  </div>
+
+  <!-- Les cartes seront ajoutées ici par le JavaScript -->
+  <div class="plateau" id="plateau"></div>
+
+  <!-- Choix du mode et bouton Rejouer -->
+  <div class="commandes">
+    <div class="modes">
+      <button class="mode" data-mode="petit">Petit</button>
+      <button class="mode" data-mode="grand">Grand</button>
+    </div>
+    <button class="bouton" id="rejouer">Rejouer</button>
+  </div>
+
+  <!-- Lien vers la page d'accueil (le choix des jeux) -->
+  <a class="lien-jeu" href="index.html">🏠 Choisir un autre jeu</a>
+
+  <!-- Fenêtre qui s'affiche quand on a gagné -->
+  <div class="victoire" id="victoire">
+    <div class="victoire-boite">
+      <h2>Bravo Myrtille !</h2>
+      <p id="resultat"></p>
+      <p id="message-record"></p>
+      <button class="bouton" id="rejouer-victoire">Rejouer</button>
+    </div>
+  </div>
+
+  <script>
+    // ===================================================================
+    // 1. LES DESSINS DES CARTES
+    // Chaque dessin est une image "SVG" : des formes simples (cercles,
+    // ellipses, traits) décrites dans une boîte de 100 x 100.
+    // ===================================================================
+
+    // Petite étoile scintillante, réutilisée sur plusieurs cartes
+    function etincelle(x, y, taille, couleur) {
+      const t = taille;
+      return '<path d="M' + x + ' ' + (y - t) +
+        ' Q' + x + ' ' + y + ' ' + (x + t) + ' ' + y +
+        ' Q' + x + ' ' + y + ' ' + x + ' ' + (y + t) +
+        ' Q' + x + ' ' + y + ' ' + (x - t) + ' ' + y +
+        ' Q' + x + ' ' + y + ' ' + x + ' ' + (y - t) + 'Z" fill="' + couleur + '"/>';
+    }
+
+    // Les joues roses, utilisées sur les personnages
+    function joues(xGauche, xDroite, y) {
+      return '<ellipse cx="' + xGauche + '" cy="' + y + '" rx="5" ry="3" fill="#ff8fc0" opacity="0.6"/>' +
+             '<ellipse cx="' + xDroite + '" cy="' + y + '" rx="5" ry="3" fill="#ff8fc0" opacity="0.6"/>';
+    }
+
+    // Un nounours : on choisit la couleur du poil, du contour et du museau.
+    // Comme ça, la même fonction dessine le blanc ET le marron.
+    function dessinOurs(poil, contour, museau) {
+      return '<svg viewBox="0 0 100 100">' +
+        // Les oreilles
+        '<circle cx="25" cy="29" r="13" fill="' + poil + '" stroke="' + contour + '" stroke-width="2.5"/>' +
+        '<circle cx="75" cy="29" r="13" fill="' + poil + '" stroke="' + contour + '" stroke-width="2.5"/>' +
+        '<circle cx="25" cy="29" r="6" fill="#ffb3d1"/>' +
+        '<circle cx="75" cy="29" r="6" fill="#ffb3d1"/>' +
+        // La tête
+        '<circle cx="50" cy="56" r="33" fill="' + poil + '" stroke="' + contour + '" stroke-width="2.5"/>' +
+        // Le museau, le nez et la bouche
+        '<ellipse cx="50" cy="67" rx="15" ry="11" fill="' + museau + '"/>' +
+        '<ellipse cx="50" cy="62" rx="5.5" ry="4" fill="#4a3428"/>' +
+        '<path d="M50 66 v3 M44 70 q6 5 12 0" stroke="#4a3428" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+        // Les yeux (avec un petit reflet blanc)
+        '<circle cx="38" cy="50" r="4" fill="#2b2b2b"/>' +
+        '<circle cx="62" cy="50" r="4" fill="#2b2b2b"/>' +
+        '<circle cx="39.3" cy="48.7" r="1.3" fill="#fff"/>' +
+        '<circle cx="63.3" cy="48.7" r="1.3" fill="#fff"/>' +
+        joues(29, 71, 60) +
+        '</svg>';
+    }
+
+    // La liste des 8 cartes du jeu.
+    // - id : un nom unique pour reconnaître les paires
+    // - nom : ce qui est lu à voix haute par le téléphone (accessibilité)
+    // - fond : la couleur pastel de la face de la carte
+    // - dessin : l'image SVG
+    const CARTES = [
+      {
+        id: "myrtille", nom: "Une myrtille", fond: "#e6ebff",
+        dessin:
+          '<svg viewBox="0 0 100 100">' +
+          // La feuille (dessinée en premier pour être derrière)
+          '<path d="M54 24 Q62 6 82 8 Q76 26 54 24Z" fill="#7fd27f" stroke="#43a24e" stroke-width="2"/>' +
+          // Le fruit
+          '<circle cx="50" cy="57" r="33" fill="#5b6fd6" stroke="#3d4aa8" stroke-width="2.5"/>' +
+          // Le reflet de lumière
+          '<ellipse cx="34" cy="44" rx="6" ry="10" fill="#fff" opacity="0.35" transform="rotate(-25 34 44)"/>' +
+          // La petite couronne en étoile en haut du fruit
+          '<polygon points="50,16 52.4,21.8 58.6,22.2 53.8,26.2 55.3,32.3 50,29 44.7,32.3 46.2,26.2 41.4,22.2 47.6,21.8" fill="#2e3680"/>' +
+          // Le visage
+          '<circle cx="40" cy="56" r="3.5" fill="#1d1f4a"/>' +
+          '<circle cx="60" cy="56" r="3.5" fill="#1d1f4a"/>' +
+          '<path d="M43 65 q7 6 14 0" stroke="#1d1f4a" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+          joues(33, 67, 64) +
+          '</svg>'
+      },
+      {
+        id: "lettre-m", nom: "La lettre M", fond: "#ffe3f1",
+        dessin:
+          '<svg viewBox="0 0 100 100">' +
+          '<text x="50" y="76" text-anchor="middle" font-size="72" font-weight="900" ' +
+          'font-family="Arial Rounded MT Bold, Trebuchet MS, Arial, sans-serif" ' +
+          'fill="#ff5fa8" stroke="#fff" stroke-width="4" paint-order="stroke">M</text>' +
+          etincelle(14, 18, 7, "#9b6bff") +
+          etincelle(86, 22, 5, "#3aa0e8") +
+          etincelle(84, 86, 6, "#9b6bff") +
+          '</svg>'
+      },
+      {
+        id: "prenom", nom: "Le prénom Myrtille", fond: "#efe4ff",
+        dessin:
+          '<svg viewBox="0 0 100 100">' +
+          // Un cœur rose au-dessus du prénom
+          '<path d="M50 40 C30 26 38 12 50 23 C62 12 70 26 50 40Z" fill="#ff6fb5"/>' +
+          // textLength oblige le mot à tenir dans la carte
+          '<text x="50" y="66" text-anchor="middle" font-size="24" font-weight="900" ' +
+          'textLength="88" lengthAdjust="spacingAndGlyphs" ' +
+          'font-family="Arial Rounded MT Bold, Trebuchet MS, Arial, sans-serif" fill="#8a4fd8">Myrtille</text>' +
+          etincelle(18, 84, 5, "#3aa0e8") +
+          etincelle(82, 84, 5, "#ff6fb5") +
+          '</svg>'
+      },
+      {
+        id: "surnom", nom: "Le surnom Mimi", fond: "#e0f2ff",
+        dessin:
+          '<svg viewBox="0 0 100 100">' +
+          '<text x="50" y="64" text-anchor="middle" font-size="36" font-weight="900" ' +
+          'textLength="76" lengthAdjust="spacingAndGlyphs" ' +
+          'font-family="Arial Rounded MT Bold, Trebuchet MS, Arial, sans-serif" fill="#3aa0e8">Mimi</text>' +
+          // Deux petits cœurs
+          '<path d="M24 30 C14 23 18 15 24 21 C30 15 34 23 24 30Z" fill="#ff6fb5"/>' +
+          '<path d="M76 84 C66 77 70 69 76 75 C82 69 86 77 76 84Z" fill="#9b6bff"/>' +
+          etincelle(80, 22, 6, "#9b6bff") +
+          etincelle(20, 80, 5, "#ff6fb5") +
+          '</svg>'
+      },
+      {
+        id: "citrouille", nom: "Une citrouille d'Halloween", fond: "#fff0dc",
+        dessin:
+          '<svg viewBox="0 0 100 100">' +
+          // La tige et la petite vrille
+          '<path d="M48 26 q1 -10 8 -14" stroke="#5c8a3a" stroke-width="6" fill="none" stroke-linecap="round"/>' +
+          '<path d="M54 22 q10 -6 14 2 q2 6 -4 6" stroke="#7fbf4d" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+          // Les trois "quartiers" de la citrouille
+          '<ellipse cx="33" cy="60" rx="20" ry="27" fill="#ff8c2e" stroke="#d9661a" stroke-width="2"/>' +
+          '<ellipse cx="67" cy="60" rx="20" ry="27" fill="#ff8c2e" stroke="#d9661a" stroke-width="2"/>' +
+          '<ellipse cx="50" cy="60" rx="20" ry="29" fill="#ffa04a" stroke="#d9661a" stroke-width="2"/>' +
+          // Le visage gentil (yeux en triangle et grand sourire)
+          '<path d="M33 55 L43 55 L38 46Z" fill="#6b2f00"/>' +
+          '<path d="M57 55 L67 55 L62 46Z" fill="#6b2f00"/>' +
+          '<path d="M48 62 L52 62 L50 59Z" fill="#6b2f00"/>' +
+          '<path d="M34 67 Q50 82 66 67 Q50 74 34 67Z" fill="#6b2f00"/>' +
+          '</svg>'
+      },
+      {
+        id: "bonhomme", nom: "Un bonhomme de neige", fond: "#e3f3ff",
+        dessin:
+          '<svg viewBox="0 0 100 100">' +
+          // Les bras en bois
+          '<path d="M32 66 L12 52 M18 56 L14 48 M68 66 L88 52 M82 56 L86 48" stroke="#7a5233" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+          // Les trois brindilles sur la tête
+          '<path d="M50 23 L45 10 M50 23 L50 7 M50 23 L56 10" stroke="#7a5233" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+          // Le corps puis la tête (boules de neige)
+          '<circle cx="50" cy="71" r="22" fill="#fff" stroke="#9cc6ea" stroke-width="2.5"/>' +
+          '<circle cx="50" cy="40" r="18" fill="#fff" stroke="#9cc6ea" stroke-width="2.5"/>' +
+          // Les yeux
+          '<circle cx="44" cy="36" r="3" fill="#2b2b2b"/>' +
+          '<circle cx="56" cy="36" r="3" fill="#2b2b2b"/>' +
+          // Le nez en carotte
+          '<path d="M50 40 L65 43 L50 45Z" fill="#ff8a2a"/>' +
+          // Le sourire
+          '<path d="M42 50 q8 6 16 0" stroke="#2b2b2b" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+          joues(39, 61, 48) +
+          // Les boutons
+          '<circle cx="50" cy="66" r="2.8" fill="#5b6fd6"/>' +
+          '<circle cx="50" cy="76" r="2.8" fill="#5b6fd6"/>' +
+          '</svg>'
+      },
+      {
+        id: "ours-blanc", nom: "Le doudou nounours blanc", fond: "#ffe9f3",
+        dessin: dessinOurs("#fffdf8", "#cdbfb0", "#f3e8dc")
+      },
+      {
+        id: "ours-marron", nom: "Le doudou nounours marron", fond: "#fff1de",
+        dessin: dessinOurs("#b5804f", "#7d5233", "#ebcba5")
+      }
+    ];
+
+    // Le petit cœur blanc dessiné au dos de chaque carte
+    const DESSIN_DOS =
+      '<svg viewBox="0 0 100 100">' +
+      '<path d="M50 88 C10 60 18 18 50 38 C82 18 90 60 50 88Z" fill="#fff" opacity="0.9"/>' +
+      '</svg>';
+
+    // Noms utilisés pour ranger les infos dans la mémoire du téléphone
+    const CLE_RECORD = "memory-myrtille-record";   // meilleur score
+    const CLE_MODE = "memory-myrtille-mode";       // dernier mode choisi
+    const CLE_SON = "memory-myrtille-son";         // son activé ou non
+
+    // Les deux modes de jeu : le nombre de paires sur le plateau
+    // Petit = 6 paires (12 cartes), Grand = 8 paires (16 cartes)
+    const MODES = { petit: 6, grand: 8 };
+
+    // ===================================================================
+    // 2. On récupère les éléments de la page
+    // ===================================================================
+    const plateau = document.getElementById("plateau");
+    const affichageCoups = document.getElementById("coups");
+    const affichageTemps = document.getElementById("temps");
+    const affichageRecord = document.getElementById("record");
+    const fenetreVictoire = document.getElementById("victoire");
+    const texteResultat = document.getElementById("resultat");
+    const texteRecord = document.getElementById("message-record");
+
+    // ===================================================================
+    // 3. Les variables qui changent pendant la partie
+    // ===================================================================
+    let premiereCarte = null;   // la 1re carte retournée
+    let deuxiemeCarte = null;   // la 2e carte retournée
+    let bloque = false;         // true = on attend, on ne peut pas toucher
+    let coups = 0;              // nombre de coups joués
+    let pairesTrouvees = 0;     // nombre de paires trouvées
+    let secondes = 0;           // temps écoulé
+    let chrono = null;          // le minuteur (null = arrêté)
+    let attente = null;         // le délai en cours (retournement ou victoire)
+    let nombrePaires = 8;       // nombre de paires de la partie en cours
+
+    // ===================================================================
+    // 4. Mélanger un tableau (méthode de Fisher-Yates)
+    // On parcourt le tableau de la fin vers le début
+    // et on échange chaque case avec une case au hasard avant elle.
+    // ===================================================================
+    function melanger(tableau) {
+      for (let i = tableau.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [tableau[i], tableau[j]] = [tableau[j], tableau[i]];
+      }
+      return tableau;
+    }
+
+    // ===================================================================
+    // 5. Transformer des secondes en texte "m:ss"
+    // ===================================================================
+    function formaterTemps(total) {
+      const minutes = Math.floor(total / 60);
+      const sec = total % 60;
+      // padStart ajoute un 0 devant si besoin (ex : 5 -> "05")
+      return minutes + ":" + String(sec).padStart(2, "0");
+    }
+
+    // ===================================================================
+    // 6. La mémoire du téléphone (record, mode, son)
+    // On utilise "localStorage" : une petite mémoire du navigateur
+    // qui reste sur le téléphone même après fermeture.
+    // try/catch évite que le jeu plante si cette mémoire est bloquée.
+    // ===================================================================
+    function lireMemoire(cle) {
+      try {
+        return localStorage.getItem(cle);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function ecrireMemoire(cle, valeur) {
+      try {
+        localStorage.setItem(cle, valeur);
+      } catch (e) {
+        // Pas grave : l'info ne sera simplement pas gardée
+      }
+    }
+
+    // On reprend le dernier mode choisi (Grand si rien n'est enregistré)
+    let mode = lireMemoire(CLE_MODE) === "petit" ? "petit" : "grand";
+
+    // Chaque mode a son propre record
+    function cleRecord() {
+      return mode === "grand" ? CLE_RECORD : CLE_RECORD + "-petit";
+    }
+
+    function lireRecord() {
+      const texte = lireMemoire(cleRecord());
+      try {
+        return texte ? JSON.parse(texte) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function sauverRecord(record) {
+      ecrireMemoire(cleRecord(), JSON.stringify(record));
+    }
+
+    function afficherRecord() {
+      const record = lireRecord();
+      if (record) {
+        affichageRecord.textContent = record.coups + " coups";
+      } else {
+        affichageRecord.textContent = "–";
+      }
+    }
+
+    // ===================================================================
+    // 7. Le chronomètre
+    // ===================================================================
+    function demarrerChrono() {
+      // setInterval lance une fonction toutes les 1000 ms (= 1 seconde)
+      chrono = setInterval(function () {
+        secondes++;
+        affichageTemps.textContent = formaterTemps(secondes);
+      }, 1000);
+    }
+
+    function arreterChrono() {
+      clearInterval(chrono);
+      chrono = null;
+    }
+
+    // ===================================================================
+    // 7 bis. Les sons de clochette de fée
+    // Aucun fichier son : le téléphone fabrique lui-même les notes
+    // grâce à "Web Audio" (un petit synthétiseur intégré au navigateur).
+    // ===================================================================
+    let audio = null;                              // le synthétiseur
+    let sonActif = lireMemoire(CLE_SON) !== "non"; // son activé par défaut
+    const boutonSon = document.getElementById("bouton-son");
+
+    // Le synthétiseur ne peut démarrer qu'après un toucher de l'écran :
+    // on le prépare donc au premier toucher de carte.
+    function preparerAudio() {
+      if (audio === null) {
+        const Synthe = window.AudioContext || window.webkitAudioContext;
+        if (!Synthe) {
+          return null;   // navigateur trop ancien : on joue sans son
+        }
+        audio = new Synthe();
+      }
+      if (audio.state === "suspended") {
+        audio.resume();
+      }
+      return audio;
+    }
+
+    // Joue UNE note de clochette.
+    // Une vraie cloche ne fait pas un son "pur" : elle mélange une note
+    // principale et des notes plus aiguës, plus discrètes.
+    // - frequence : la hauteur de la note (plus c'est grand, plus c'est aigu)
+    // - debut : dans combien de secondes la note commence
+    // - duree : combien de temps la note résonne
+    // - volume : de 0 (muet) à 1 (très fort)
+    function note(frequence, debut, duree, volume) {
+      const t = audio.currentTime + debut;
+      const couches = [
+        [1, volume],            // la note principale
+        [2.76, volume * 0.3],   // une note plus aiguë, typique des cloches
+        [5.4, volume * 0.12]    // une petite brillance tout en haut
+      ];
+      couches.forEach(function (couche) {
+        const oscillateur = audio.createOscillator();  // fabrique le son
+        const gain = audio.createGain();               // règle le volume
+        oscillateur.type = "sine";
+        oscillateur.frequency.value = frequence * couche[0];
+        // Le son monte très vite puis s'éteint doucement, comme une cloche
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(couche[1], t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + duree);
+        oscillateur.connect(gain);
+        gain.connect(audio.destination);               // vers le haut-parleur
+        oscillateur.start(t);
+        oscillateur.stop(t + duree + 0.05);
+      });
+    }
+
+    // Paire trouvée : 3 petites notes qui montent (mi, sol, do)
+    function sonPaire() {
+      if (!sonActif || !preparerAudio()) return;
+      [1318.5, 1568, 2093].forEach(function (frequence, i) {
+        note(frequence, i * 0.07, 0.9, 0.15);
+      });
+    }
+
+    // Victoire : une cascade de notes qui montent, puis un accord qui scintille
+    function sonVictoire() {
+      if (!sonActif || !preparerAudio()) return;
+      [1046.5, 1318.5, 1568, 2093, 2637, 3136].forEach(function (frequence, i) {
+        note(frequence, i * 0.11, 1.2, 0.13);
+      });
+      [2093, 2637, 3136].forEach(function (frequence) {
+        note(frequence, 0.8, 2, 0.08);
+      });
+    }
+
+    // Le bouton cloche : couper ou remettre le son
+    function afficherBoutonSon() {
+      boutonSon.textContent = sonActif ? "🔔" : "🔕";
+      boutonSon.setAttribute("aria-label", sonActif ? "Couper le son" : "Remettre le son");
+    }
+
+    boutonSon.addEventListener("click", function () {
+      sonActif = !sonActif;
+      ecrireMemoire(CLE_SON, sonActif ? "oui" : "non");
+      afficherBoutonSon();
+      sonPaire();   // petit son pour confirmer que c'est remis
+    });
+
+    afficherBoutonSon();
+
+    // ===================================================================
+    // 8. Créer une nouvelle partie
+    // ===================================================================
+    function nouvellePartie() {
+      // On remet tout à zéro
+      arreterChrono();
+      clearTimeout(attente);    // annule un retournement encore en attente
+      premiereCarte = null;
+      deuxiemeCarte = null;
+      bloque = false;
+      coups = 0;
+      pairesTrouvees = 0;
+      secondes = 0;
+      affichageCoups.textContent = "0";
+      affichageTemps.textContent = "0:00";
+      fenetreVictoire.classList.remove("visible");
+      // On enlève les confettis qui tomberaient encore
+      document.querySelectorAll(".confetti").forEach(function (c) { c.remove(); });
+      afficherRecord();
+
+      // On allume le bouton du mode choisi (Petit ou Grand)
+      document.querySelectorAll(".mode").forEach(function (bouton) {
+        bouton.classList.toggle("actif", bouton.dataset.mode === mode);
+      });
+
+      // On tire au hasard les dessins de la partie
+      // (en mode Petit, 6 dessins sur les 8)
+      nombrePaires = MODES[mode];
+      const choix = melanger([...CARTES]).slice(0, nombrePaires);
+
+      // On double la liste des cartes (pour faire les paires) et on mélange
+      const paquet = melanger([...choix, ...choix]);
+
+      // On vide le plateau puis on crée les 16 cartes
+      plateau.innerHTML = "";
+      paquet.forEach(function (modele) {
+        const carte = document.createElement("button");
+        carte.className = "carte";
+        carte.dataset.id = modele.id;   // on garde l'identité "cachée" dans la carte
+        carte.dataset.nom = modele.nom;
+        carte.setAttribute("aria-label", "Carte cachée");
+        carte.innerHTML =
+          '<div class="carte-interieur">' +
+            '<div class="dos">' + DESSIN_DOS + '</div>' +
+            '<div class="face" style="background:' + modele.fond + '">' + modele.dessin + '</div>' +
+          '</div>';
+        carte.addEventListener("click", function () {
+          toucherCarte(carte);
+        });
+        plateau.appendChild(carte);
+      });
+    }
+
+    // ===================================================================
+    // 9. Quand on touche une carte
+    // ===================================================================
+    function toucherCarte(carte) {
+      // On ignore le toucher si :
+      // - on attend que deux cartes se retournent
+      // - la carte est déjà retournée ou déjà trouvée
+      if (bloque || carte.classList.contains("retournee")) {
+        return;
+      }
+
+      // On réveille le synthétiseur (il a besoin d'un toucher pour démarrer)
+      if (sonActif) {
+        preparerAudio();
+      }
+
+      // Le chrono démarre au tout premier toucher
+      if (chrono === null && secondes === 0) {
+        demarrerChrono();
+      }
+
+      // On retourne la carte (le CSS fait l'animation)
+      carte.classList.add("retournee");
+      carte.setAttribute("aria-label", carte.dataset.nom);
+
+      if (premiereCarte === null) {
+        // C'est la 1re carte du coup : on la garde en mémoire
+        premiereCarte = carte;
+        return;
+      }
+
+      // C'est la 2e carte : un coup est terminé
+      deuxiemeCarte = carte;
+      coups++;
+      affichageCoups.textContent = coups;
+
+      if (premiereCarte.dataset.id === deuxiemeCarte.dataset.id) {
+        // Les deux cartes sont identiques : elles restent visibles
+        premiereCarte.classList.add("trouvee");
+        deuxiemeCarte.classList.add("trouvee");
+        pairesTrouvees++;
+        premiereCarte = null;
+        deuxiemeCarte = null;
+
+        // Toutes les paires trouvées ? C'est gagné !
+        if (pairesTrouvees === nombrePaires) {
+          sonVictoire();
+          victoire();
+        } else {
+          sonPaire();
+        }
+      } else {
+        // Pas identiques : on bloque, puis on les retourne après 1 seconde
+        bloque = true;
+        attente = setTimeout(function () {
+          premiereCarte.classList.remove("retournee");
+          deuxiemeCarte.classList.remove("retournee");
+          premiereCarte.setAttribute("aria-label", "Carte cachée");
+          deuxiemeCarte.setAttribute("aria-label", "Carte cachée");
+          premiereCarte = null;
+          deuxiemeCarte = null;
+          bloque = false;
+        }, 1000);
+      }
+    }
+
+    // ===================================================================
+    // 10. Pluie de confettis (cœurs et étoiles) quand on gagne
+    // ===================================================================
+    function lancerConfettis() {
+      const symboles = ["💖", "💜", "💙", "⭐", "✨"];
+      for (let i = 0; i < 30; i++) {
+        const c = document.createElement("span");
+        c.className = "confetti";
+        c.textContent = symboles[i % symboles.length];
+        c.style.left = Math.random() * 100 + "vw";                 // position au hasard
+        c.style.animationDuration = 2 + Math.random() * 2 + "s";   // vitesse au hasard
+        c.style.animationDelay = Math.random() * 0.8 + "s";
+        document.body.appendChild(c);
+        // On l'enlève de la page quand il a fini de tomber
+        c.addEventListener("animationend", function () { c.remove(); });
+      }
+    }
+
+    // ===================================================================
+    // 11. Fin de partie
+    // ===================================================================
+    function victoire() {
+      arreterChrono();
+
+      texteResultat.textContent =
+        "Gagné en " + coups + " coups et " + formaterTemps(secondes) + ".";
+
+      // Meilleur score = le moins de coups.
+      // En cas d'égalité, le temps le plus court gagne.
+      const ancien = lireRecord();
+      const nouveauRecord =
+        ancien === null ||
+        coups < ancien.coups ||
+        (coups === ancien.coups && secondes < ancien.secondes);
+
+      if (nouveauRecord) {
+        sauverRecord({ coups: coups, secondes: secondes });
+        texteRecord.innerHTML = '<span class="record">🏆 Nouveau record !</span>';
+      } else {
+        texteRecord.textContent =
+          "Record : " + ancien.coups + " coups en " + formaterTemps(ancien.secondes);
+      }
+
+      afficherRecord();
+
+      // Petite pause pour laisser finir l'animation de la dernière carte
+      attente = setTimeout(function () {
+        fenetreVictoire.classList.add("visible");
+        lancerConfettis();
+      }, 800);
+    }
+
+    // ===================================================================
+    // 12. Les boutons "Rejouer"
+    // ===================================================================
+    document.getElementById("rejouer").addEventListener("click", nouvellePartie);
+    document.getElementById("rejouer-victoire").addEventListener("click", nouvellePartie);
+
+    // Les boutons "Petit" et "Grand" : on change de mode et on relance
+    document.querySelectorAll(".mode").forEach(function (bouton) {
+      bouton.addEventListener("click", function () {
+        mode = bouton.dataset.mode;
+        ecrireMemoire(CLE_MODE, mode);
+        nouvellePartie();
+      });
+    });
+
+    // ===================================================================
+    // 13. On lance la première partie au chargement de la page
+    // ===================================================================
+    nouvellePartie();
+    // ===================================================================
+    // 14. Le mode appli : une copie du jeu est gardée dans le téléphone
+    // pour pouvoir jouer même sans internet (voir le fichier sw.js)
+    // ===================================================================
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    }
+  </script>
+</body>
+</html>
