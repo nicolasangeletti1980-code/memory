@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Mesure AR</title>
+<style>
+  :root {
+    --noir: #000000;
+    --jaune: #FFD400;
+    --blanc: #FFFFFF;
+    --gris: #1A1A1A;
+    --voile: rgba(0, 0, 0, 0.78);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--noir); color: var(--blanc);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    -webkit-user-select: none; user-select: none;
+  }
+  button {
+    font: inherit; font-weight: 800; cursor: pointer;
+    border-radius: 18px; min-height: 64px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  svg.ico { width: 30px; height: 30px; flex: 0 0 auto; }
+
+  /* ---------- Accueil ---------- */
+  #accueil {
+    min-height: 100%; padding: 32px 20px calc(24px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; gap: 22px;
+  }
+  #accueil h1 { color: var(--jaune); font-size: 46px; margin: 12px 0 0; line-height: 1.05; }
+  #accueil .sous-titre { font-size: 22px; font-weight: 700; margin: 0; line-height: 1.3; }
+  #btn-demarrer {
+    width: 100%; min-height: 88px; font-size: 26px;
+    background: var(--jaune); color: var(--noir); border: none;
+  }
+  #btn-demarrer[disabled] { background: #555; color: #BBB; }
+  .encadre {
+    border: 3px solid var(--jaune); border-radius: 18px; padding: 16px 18px;
+    font-size: 19px; font-weight: 700; line-height: 1.4;
+  }
+  .encadre a { color: var(--jaune); }
+  .encadre ol { margin: 8px 0 0; padding-left: 24px; }
+  #msg-compat[hidden] { display: none; }
+
+  /* ---------- Historique (partagé accueil + RA) ---------- */
+  .historique h2 { color: var(--jaune); font-size: 24px; margin: 0 0 8px; }
+  .historique .vide { font-size: 18px; color: #CCC; margin: 0; }
+  .serie { border-top: 2px solid #333; padding: 10px 0 6px; }
+  .serie:first-of-type { border-top: none; }
+  .serie-titre { font-size: 20px; font-weight: 800; color: var(--jaune); }
+  .serie ul { list-style: none; margin: 6px 0 0; padding: 0; }
+  .serie li { font-size: 19px; font-weight: 700; padding: 4px 0; }
+  .serie li span { color: #CCC; font-weight: 600; }
+
+  /* ---------- Superposition RA (dom-overlay) ---------- */
+  #overlay { position: fixed; inset: 0; display: none; pointer-events: none; }
+  #overlay.actif { display: block; }
+  #overlay .bloc { pointer-events: auto; }
+
+  #bandeau-haut {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+    background: var(--voile); text-align: center;
+  }
+  #total { color: var(--jaune); font-size: 44px; font-weight: 900; line-height: 1.1; }
+  #segment { font-size: 24px; font-weight: 800; margin-top: 2px; }
+  #consigne {
+    margin-top: 10px; font-size: 21px; font-weight: 800; line-height: 1.3;
+    color: var(--noir); background: var(--jaune); border-radius: 12px; padding: 10px 12px;
+  }
+
+  .etiquette {
+    position: absolute; transform: translate(-50%, -50%);
+    background: var(--noir); color: var(--jaune);
+    border: 2px solid var(--jaune); border-radius: 10px;
+    padding: 4px 10px; font-size: 22px; font-weight: 900; white-space: nowrap;
+    pointer-events: none;
+  }
+
+  #bas {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
+    background: var(--voile);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  #btn-historique {
+    width: 100%; min-height: 56px; font-size: 21px;
+    background: var(--gris); color: var(--jaune); border: 2px solid var(--jaune);
+  }
+  #panneau-historique {
+    display: none; max-height: 34vh; overflow-y: auto;
+    background: var(--noir); border: 2px solid var(--jaune); border-radius: 16px; padding: 10px 14px;
+  }
+  #panneau-historique.ouvert { display: block; }
+  .rangee { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .rangee button {
+    min-height: 76px; font-size: 19px; flex-direction: column; gap: 4px;
+    background: var(--noir); color: var(--jaune); border: 3px solid var(--jaune);
+  }
+  .rangee button:active, #btn-historique:active { background: var(--jaune); color: var(--noir); }
+  .rangee button:active svg, #btn-historique:active svg { stroke: var(--noir); }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js" } }
+</script>
+</head>
+<body>
+
+<!-- ===== Écran d'accueil ===== -->
+<main id="accueil">
+  <h1>Mesure AR</h1>
+  <p class="sous-titre">Mesurez avec la caméra de votre téléphone.</p>
+  <button id="btn-demarrer" type="button" disabled>Vérification…</button>
+  <div id="msg-compat" class="encadre" hidden></div>
+  <section class="historique encadre" aria-live="polite">
+    <h2>Historique de la session</h2>
+    <div class="liste-historique"></div>
+  </section>
+</main>
+
+<!-- ===== Superposition affichée pendant la réalité augmentée ===== -->
+<div id="overlay">
+  <div id="etiquettes"></div>
+
+  <div id="bandeau-haut" class="bloc">
+    <div id="total">Total : 0 cm</div>
+    <div id="segment">Segment en cours : —</div>
+    <div id="consigne">Bougez lentement le téléphone pour détecter les surfaces</div>
+  </div>
+
+  <div id="bas" class="bloc">
+    <div id="panneau-historique" class="historique">
+      <h2>Historique</h2>
+      <div class="liste-historique"></div>
+    </div>
+    <button id="btn-historique" type="button">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#FFD400" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>
+      <span id="lib-historique">Historique (0)</span>
+    </button>
+    <div class="rangee">
+      <button id="btn-annuler" type="button">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#FFD400" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+        Annuler
+      </button>
+      <button id="btn-effacer" type="button">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#FFD400" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        Effacer
+      </button>
+      <button id="btn-quitter" type="button">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#FFD400" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        Quitter
+      </button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* ---------- Références DOM ---------- */
+const $ = (id) => document.getElementById(id);
+const btnDemarrer = $('btn-demarrer');
+const msgCompat = $('msg-compat');
+const overlay = $('overlay');
+const elTotal = $('total');
+const elSegment = $('segment');
+const elConsigne = $('consigne');
+const elEtiquettes = $('etiquettes');
+const panneauHisto = $('panneau-historique');
+const libHisto = $('lib-historique');
+
+const LIEN_ARCORE = 'https://play.google.com/store/apps/details?id=com.google.ar.core';
+
+/* ---------- Format des longueurs ---------- */
+function formatLongueur(m) {
+  const cm = m * 100;
+  if (cm < 99.5) return Math.round(cm) + ' cm';
+  const metres = Math.round(cm) / 100; // évite les arrondis flottants (ex. 0,995 m → 1,00 m)
+  return metres.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' m';
+}
+function formatDateHeure(d) {
+  return d.toLocaleDateString('fr-FR') + ' ' +
+         d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+/* ---------- Messages d'incompatibilité ---------- */
+function afficherIncompat(html) {
+  btnDemarrer.disabled = true;
+  btnDemarrer.textContent = 'Mesure indisponible';
+  msgCompat.innerHTML = html;
+  msgCompat.hidden = false;
+}
+const AIDE_ARCORE =
+  '<ol>' +
+  '<li>Ouvrez le Play Store et installez ou mettez à jour <strong>« Services Google Play pour RA »</strong> : ' +
+  '<a href="' + LIEN_ARCORE + '">ouvrir la fiche</a>.</li>' +
+  '<li>Utilisez <strong>Google Chrome</strong> (pas le navigateur Samsung Internet).</li>' +
+  '<li>Fermez Chrome complètement puis rouvrez cette page.</li>' +
+  '</ol>';
+
+async function verifierCompatibilite() {
+  if (!window.isSecureContext) {
+    afficherIncompat('La page doit être ouverte en <strong>https://</strong> pour utiliser la caméra.');
+    return;
+  }
+  if (!('xr' in navigator)) {
+    afficherIncompat('Ce navigateur ne gère pas la réalité augmentée (WebXR).' + AIDE_ARCORE);
+    return;
+  }
+  let ok = false;
+  try {
+    ok = await navigator.xr.isSessionSupported('immersive-ar');
+  } catch (e) {
+    ok = false;
+  }
+  if (!ok) {
+    afficherIncompat('La réalité augmentée n\'est pas disponible sur cet appareil pour le moment.' + AIDE_ARCORE);
+    return;
+  }
+  btnDemarrer.disabled = false;
+  btnDemarrer.textContent = 'Démarrer la mesure';
+}
+
+/* ---------- Scène three.js ---------- */
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.xr.enabled = true;
+renderer.xr.setReferenceSpaceType('local');
+renderer.domElement.style.cssText = 'position:fixed;inset:0;z-index:-1;pointer-events:none;';
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 50);
+
+const JAUNE = 0xFFD400;
+const matJaune = new THREE.MeshBasicMaterial({ color: JAUNE });
+const matBlanc = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+
+// Réticule : anneau d'environ 4 cm + point central
+const reticule = new THREE.Group();
+reticule.add(new THREE.Mesh(new THREE.RingGeometry(0.016, 0.022, 40).rotateX(-Math.PI / 2), matJaune));
+reticule.add(new THREE.Mesh(new THREE.CircleGeometry(0.003, 16).rotateX(-Math.PI / 2), matBlanc));
+reticule.matrixAutoUpdate = false;
+reticule.visible = false;
+scene.add(reticule);
+
+const geoPoint = new THREE.SphereGeometry(0.006, 16, 12);
+const geoTrait = new THREE.CylinderGeometry(0.0025, 0.0025, 1, 8); // hauteur 1 m, mise à l'échelle ensuite
+const HAUT = new THREE.Vector3(0, 1, 0);
+
+function creerTrait(materiau) {
+  const m = new THREE.Mesh(geoTrait, materiau);
+  m.visible = false;
+  scene.add(m);
+  return m;
+}
+function placerTrait(trait, a, b) {
+  const dir = new THREE.Vector3().subVectors(b, a);
+  const long = dir.length();
+  if (long < 1e-4) { trait.visible = false; return; }
+  trait.position.copy(a).addScaledVector(dir, 0.5);
+  trait.quaternion.setFromUnitVectors(HAUT, dir.normalize());
+  trait.scale.set(1, long, 1);
+  trait.visible = true;
+}
+
+/* ---------- Données de mesure ---------- */
+// points : [{ pos: Vector3, mesh }]
+// segments : [{ trait, etiquette, longueur }]
+let points = [];
+let segments = [];
+const traitDirect = creerTrait(new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.85 }));
+const etiquetteDirecte = creerEtiquette();
+
+// Historique de la session (effacé à la fermeture de la page)
+const historique = []; // [{ numero, debut: Date, mesures: [{ date, longueur }] }]
+let serieCourante = null;
+
+function creerEtiquette() {
+  const el = document.createElement('div');
+  el.className = 'etiquette';
+  el.style.display = 'none';
+  elEtiquettes.appendChild(el);
+  return el;
+}
+
+function totalSerie() {
+  return segments.reduce((s, seg) => s + seg.longueur, 0);
+}
+
+function ajouterPoint(pos) {
+  const mesh = new THREE.Mesh(geoPoint, matJaune);
+  mesh.position.copy(pos);
+  scene.add(mesh);
+  points.push({ pos: pos.clone(), mesh });
+
+  if (points.length >= 2) {
+    const a = points[points.length - 2].pos;
+    const b = points[points.length - 1].pos;
+    const trait = creerTrait(matJaune);
+    placerTrait(trait, a, b);
+    const etiquette = creerEtiquette();
+    const longueur = a.distanceTo(b);
+    etiquette.textContent = formatLongueur(longueur);
+    segments.push({ trait, etiquette, longueur, milieu: a.clone().lerp(b, 0.5) });
+
+    if (!serieCourante) {
+      serieCourante = { numero: historique.length + 1, debut: new Date(), mesures: [] };
+      historique.push(serieCourante);
+    }
+    serieCourante.mesures.push({ date: new Date(), longueur });
+    rendreHistorique();
+  }
+  if (navigator.vibrate) navigator.vibrate(35);
+  majTextes();
+}
+
+function annulerDernierPoint() {
+  if (points.length === 0) return;
+  const p = points.pop();
+  scene.remove(p.mesh);
+  if (segments.length > 0 && segments.length === points.length) {
+    const s = segments.pop();
+    scene.remove(s.trait);
+    s.etiquette.remove();
+    if (serieCourante) {
+      serieCourante.mesures.pop();
+      if (serieCourante.mesures.length === 0) {
+        historique.pop();
+        serieCourante = null;
+      }
+    }
+    rendreHistorique();
+  }
+  if (navigator.vibrate) navigator.vibrate(20);
+  majTextes();
+}
+
+function toutEffacer() {
+  points.forEach((p) => scene.remove(p.mesh));
+  segments.forEach((s) => { scene.remove(s.trait); s.etiquette.remove(); });
+  points = [];
+  segments = [];
+  serieCourante = null; // la série est terminée et reste dans l'historique
+  traitDirect.visible = false;
+  etiquetteDirecte.style.display = 'none';
+  rendreHistorique();
+  majTextes();
+}
+
+/* ---------- Affichage texte ---------- */
+let surfaceTrouvee = false;
+let longueurDirecte = null;
+
+function majTextes() {
+  elTotal.textContent = 'Total : ' + formatLongueur(totalSerie());
+  elSegment.textContent = 'Segment en cours : ' + (longueurDirecte === null ? '—' : formatLongueur(longueurDirecte));
+
+  if (!surfaceTrouvee) {
+    elConsigne.textContent = 'Bougez lentement le téléphone pour détecter les surfaces';
+  } else if (!reticule.visible) {
+    elConsigne.textContent = 'Surface perdue : visez le sol ou une table et bougez doucement';
+  } else if (points.length === 0) {
+    elConsigne.textContent = 'Touchez l\'écran pour poser le premier point';
+  } else {
+    elConsigne.textContent = 'Touchez l\'écran pour poser le point suivant';
+  }
+}
+
+function rendreHistorique() {
+  const nb = historique.reduce((n, s) => n + s.mesures.length, 0);
+  libHisto.textContent = 'Historique (' + nb + ')';
+
+  const html = historique.length === 0
+    ? '<p class="vide">Aucune mesure pour l\'instant.</p>'
+    : historique.slice().reverse().map((s) => {
+        const total = s.mesures.reduce((t, m) => t + m.longueur, 0);
+        const lignes = s.mesures.map((m, i) =>
+          '<li>Segment ' + (i + 1) + ' : ' + formatLongueur(m.longueur) +
+          ' <span>— ' + formatDateHeure(m.date) + '</span></li>').join('');
+        return '<div class="serie"><div class="serie-titre">Série ' + s.numero +
+               ' — Total : ' + formatLongueur(total) + '</div><ul>' + lignes + '</ul></div>';
+      }).join('');
+
+  document.querySelectorAll('.liste-historique').forEach((el) => { el.innerHTML = html; });
+}
+
+/* ---------- Placement des étiquettes à l'écran ---------- */
+const _v = new THREE.Vector3();
+function placerEtiquette(el, posMonde) {
+  _v.copy(posMonde).project(camera);
+  if (_v.z > 1 || _v.z < -1) { el.style.display = 'none'; return; }
+  const w = overlay.clientWidth, h = overlay.clientHeight;
+  el.style.left = ((_v.x + 1) / 2 * w) + 'px';
+  el.style.top = ((1 - _v.y) / 2 * h) + 'px';
+  el.style.display = 'block';
+}
+
+/* ---------- Session WebXR ---------- */
+let session = null;
+let sourceHitTest = null;
+const _pos = new THREE.Vector3();
+
+async function demarrer() {
+  btnDemarrer.disabled = true;
+  try {
+    session = await navigator.xr.requestSession('immersive-ar', {
+      requiredFeatures: ['hit-test'],
+      optionalFeatures: ['dom-overlay'],
+      domOverlay: { root: overlay }
+    });
+  } catch (e) {
+    afficherIncompat('Impossible de démarrer la réalité augmentée (' + (e && e.name ? e.name : 'erreur') + ').' + AIDE_ARCORE);
+    btnDemarrer.disabled = false;
+    btnDemarrer.textContent = 'Réessayer';
+    return;
+  }
+
+  session.addEventListener('end', quandSessionTerminee);
+  session.addEventListener('select', quandSelection);
+
+  try {
+    await renderer.xr.setSession(session);
+    const espaceVue = await session.requestReferenceSpace('viewer');
+    sourceHitTest = await session.requestHitTestSource({ space: espaceVue });
+  } catch (e) {
+    msgCompat.innerHTML = 'La détection des surfaces n\'a pas pu démarrer (' + (e && e.name ? e.name : 'erreur') + '). Réessayez.' + AIDE_ARCORE;
+    msgCompat.hidden = false;
+    session.end();
+    return;
+  }
+
+  overlay.classList.add('actif');
+  surfaceTrouvee = false;
+  majTextes();
+  rendreHistorique();
+  renderer.setAnimationLoop(boucle);
+}
+
+function quandSelection() {
+  if (!reticule.visible) return;
+  _pos.setFromMatrixPosition(reticule.matrix);
+  ajouterPoint(_pos.clone());
+}
+
+function quandSessionTerminee() {
+  renderer.setAnimationLoop(null);
+  if (sourceHitTest) { sourceHitTest.cancel(); sourceHitTest = null; }
+  session = null;
+  toutEffacer();
+  reticule.visible = false;
+  overlay.classList.remove('actif');
+  panneauHisto.classList.remove('ouvert');
+  btnDemarrer.disabled = false;
+  btnDemarrer.textContent = 'Démarrer la mesure';
+}
+
+function boucle(temps, frame) {
+  if (frame && sourceHitTest) {
+    const espaceRef = renderer.xr.getReferenceSpace();
+    const resultats = frame.getHitTestResults(sourceHitTest);
+    const etaitVisible = reticule.visible;
+    if (resultats.length > 0) {
+      const pose = resultats[0].getPose(espaceRef);
+      if (pose) {
+        reticule.matrix.fromArray(pose.transform.matrix);
+        reticule.visible = true;
+        surfaceTrouvee = true;
+      } else {
+        reticule.visible = false;
+      }
+    } else {
+      reticule.visible = false;
+    }
+
+    // Segment en direct entre le dernier point et le réticule
+    if (reticule.visible && points.length > 0) {
+      _pos.setFromMatrixPosition(reticule.matrix);
+      const dernier = points[points.length - 1].pos;
+      placerTrait(traitDirect, dernier, _pos);
+      longueurDirecte = dernier.distanceTo(_pos);
+    } else {
+      traitDirect.visible = false;
+      longueurDirecte = null;
+    }
+    if (etaitVisible !== reticule.visible) majTextes();
+  }
+
+  renderer.render(scene, camera);
+
+  // Étiquettes (après le rendu : la caméra a reçu la pose du téléphone)
+  segments.forEach((s) => placerEtiquette(s.etiquette, s.milieu));
+  if (traitDirect.visible) {
+    etiquetteDirecte.textContent = formatLongueur(longueurDirecte);
+    placerEtiquette(etiquetteDirecte, traitDirect.position);
+  } else {
+    etiquetteDirecte.style.display = 'none';
+  }
+  elSegment.textContent = 'Segment en cours : ' + (longueurDirecte === null ? '—' : formatLongueur(longueurDirecte));
+}
+
+/* ---------- Boutons ---------- */
+// Un appui sur les zones de boutons ne doit pas poser de point (spécification WebXR DOM Overlays)
+document.querySelectorAll('#overlay .bloc').forEach((el) => {
+  el.addEventListener('beforexrselect', (ev) => ev.preventDefault());
+});
+
+btnDemarrer.addEventListener('click', demarrer);
+$('btn-annuler').addEventListener('click', annulerDernierPoint);
+$('btn-effacer').addEventListener('click', toutEffacer);
+$('btn-quitter').addEventListener('click', () => { if (session) session.end(); });
+$('btn-historique').addEventListener('click', () => panneauHisto.classList.toggle('ouvert'));
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  if (!renderer.xr.isPresenting) renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+rendreHistorique();
+verifierCompatibilite();
+</script>
+</body>
+</html>
