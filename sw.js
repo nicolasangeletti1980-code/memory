@@ -5,7 +5,7 @@
 
 // Le nom de la copie. Si on change les jeux, on change ce numéro
 // pour forcer une copie toute neuve.
-const NOM_COPIE = "memory-myrtille-v9";
+const NOM_COPIE = "memory-myrtille-v10";
 
 // On lit la liste des univers et leurs cartes,
 // pour savoir quels fichiers (pages, dessins, sons) garder.

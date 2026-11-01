@@ -23,7 +23,7 @@ fichierMonde.onerror = function () {
 document.body.appendChild(fichierMonde);
 
 // ===== 2. Les réglages du jeu =====
-const DELAI_MAUVAISE_PAIRE = 1300;  // temps pour regarder une mauvaise paire (1,3 s)
+const DELAI_MAUVAISE_PAIRE = 1800;  // temps pour regarder une mauvaise paire (1,8 s)
 const ERREURS_AVANT_INDICE = 4;     // après 4 erreurs de suite : un petit indice
 const DELAI_FENETRE_VICTOIRE = 2500; // on laisse les cartes danser avant la fenêtre
 const DELAI_BOUTON_VICTOIRE = 1500;  // le bouton Rejouer s'allume un peu après
@@ -264,7 +264,7 @@ function toucherCarte(carte) {
       sonPaire(monde, modele);
     }
   } else {
-    // Pas identiques : on les laisse visibles 1,3 seconde, puis on les recache.
+    // Pas identiques : on les laisse visibles 1,8 seconde, puis on les recache.
     // Aucun son : on ne veut jamais décourager.
     erreursDeSuite++;
     bloque = true;
