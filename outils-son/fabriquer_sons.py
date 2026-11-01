@@ -94,15 +94,6 @@ def assembler(morceaux):
     return total
 
 
-def montee_exp(n_montee, n_total, volume, fin=1e-4):
-    """Enveloppe « comme sons.js » : monte de 0,0001 à volume, puis
-    redescend à 0,0001 (rampes exponentielles du navigateur)."""
-    env = np.full(n_total, fin)
-    a = np.arange(n_montee) / max(n_montee, 1)
-    env[:n_montee] = 1e-4 * (volume / 1e-4) ** a
-    return env
-
-
 # =====================================================================
 # 2. Les filtres (pour « sculpter » le bruit et les sons)
 # =====================================================================
@@ -258,7 +249,10 @@ def cloche(frequence, duree, volume):
         if f > 6500:
             continue                          # trop aigu pour de petites oreilles
         v = volume * rel * (0.5 if f > 4500 else 1)
-        env = montee_exp(nb(0.01), n, v)
+        env = np.full(n, 1e-4)
+        # attaque arrondie en 10 ms (plus douce que sons.js : pas de « clic »)
+        a = t < 0.01
+        env[a] = v * np.sin(np.pi / 2 * t[a] / 0.01) ** 2
         reste = (t - 0.01) / (duree - 0.01)
         descente = (t >= 0.01) & (t < duree)
         env[descente] = v * (1e-4 / v) ** reste[descente]
@@ -275,7 +269,7 @@ def bulle(frequence, volume, taille=1.0):
     f = frequence * 2.6 ** (np.minimum(t, monte) / monte)
     env = np.full(len(t), 1e-4)
     a = t < 0.01
-    env[a] = 1e-4 * (volume / 1e-4) ** (t[a] / 0.01)
+    env[a] = volume * np.sin(np.pi / 2 * t[a] / 0.01) ** 2     # attaque arrondie
     b = (t >= 0.01) & (t < 0.16 * taille)
     env[b] = volume * (1e-4 / volume) ** ((t[b] - 0.01) / (0.16 * taille - 0.01))
     return env * np.sin(phase(f))
@@ -478,11 +472,11 @@ def mer_etoile():
 def mer_saint_jacques():
     # Une vague douce : un « chhhh » qui monte et redescend
     d = 1.4
-    coupure = courbe([(0, 400), (0.45, 1400), (d, 300)], d, log=True)
+    coupure = courbe([(0, 400), (0.45, 1200), (d, 300)], d, log=True)
 
     def forme(t, f):
         c = valeur(coupure, int(t * SR))
-        return 1 / np.sqrt(1 + (f / c) ** 4)
+        return 1 / np.sqrt(1 + (f / c) ** 8)
     vague = bruit_filtre(nb(d), forme) * courbe([(0, 0), (0.04, 0.3), (0.45, 1), (0.9, 0.6), (d, 0)], d)
     return assembler([(0, 0.15 * vague), (0.95, bulle(500, .12)), (1.1, bulle(650, .1))])
 
@@ -719,7 +713,7 @@ def zoo_elephant():
     amp = courbe([(0, 0), (0.05, 0.8), (0.15, 1), (0.85, 0.9), (d, 0)], d)
     amp = amp * (1 + 0.2 * np.sin(2 * np.pi * 23 * t))
     return voix(f0, [(950, 450, 1), (1800, 500, 0.8), (2700, 500, 0.35)], amp,
-                souffle=0.35, pente=0.35, rugosite=0.35, fmax=4500)
+                souffle=0.7, pente=0.35, rugosite=0.45, fmax=4500)
 
 
 def zoo_girafe():
@@ -778,8 +772,8 @@ def zoo_hippopotame():
     def hon(d):
         f0 = courbe([(0, 85), (0.06, 115), (d, 80)], d, log=True)
         amp = courbe([(0, 0), (0.015, 1), (0.1, 0.8), (d, 0)], d)
-        return voix(f0, [(280, 120, 1), (700, 200, 0.6), (1500, 300, 0.2), (2400, 400, 0.08)], amp,
-                    souffle=0.35, pente=0.8, rugosite=0.5, fmax=3500, tremblement=0.03)
+        return voix(f0, [(380, 150, 1), (900, 220, 0.7), (1600, 300, 0.3), (2400, 400, 0.1)], amp,
+                    souffle=0.35, pente=0.6, rugosite=0.5, fmax=3500, tremblement=0.03)
     return assembler([(0, hon(0.3)), (0.36, 0.9 * hon(0.24)), (0.66, 0.8 * hon(0.22))])
 
 
@@ -834,7 +828,7 @@ def foret_herisson():
         d = 0.06
         t = temps(d)
         def forme(tt, f):
-            return resonance(f, 1300, 600) + 0.6 * resonance(f, 2600, 800)
+            return resonance(f, 1300, 600) ** 2 + 0.6 * resonance(f, 2600, 800) ** 2
         sniff = bruit_filtre(nb(d), forme) * np.sin(np.pi * t / d) ** 1.5
         morceaux.append((debut, de.uniform(0.25, 0.35) * sniff))
     d = 0.12
@@ -863,7 +857,7 @@ def hou_hibou(d, f, tremolo=0.0):
     amp = courbe([(0, 0), (0.06, 1), (d * 0.7, 0.85), (d, 0)], d)
     if tremolo:
         amp = amp * (1 - 0.45 * (0.5 + 0.5 * np.sin(2 * np.pi * tremolo * t)) * np.minimum(t / 0.1, 1))
-    return voix(f0, [(f, 150, 1), (900, 300, 0.3)], amp, souffle=0.12, pente=2.5, fmax=3000,
+    return voix(f0, [(f, 150, 1), (900, 300, 0.3)], amp, souffle=0.04, pente=2.5, fmax=3000,
                 tremblement=0.004)
 
 
@@ -893,9 +887,9 @@ def foret_ours():
     f0 = courbe([(0, 75), (0.3, 95), (0.7, 88), (d, 68)], d, log=True)
     amp = courbe([(0, 0), (0.1, 0.8), (0.4, 1), (0.8, 0.8), (d, 0)], d)
     amp = amp * (0.7 + 0.3 * np.sin(2 * np.pi * 22 * t))     # le « rrr »
-    F1 = courbe([(0, 350), (0.4, 500), (d, 380)], d)
-    return voix(f0, [(F1, 200, 1), (900, 250, 0.6), (2200, 400, 0.15)], amp,
-                souffle=0.5, pente=0.8, rugosite=0.8, fmax=3500, tremblement=0.04)
+    F1 = courbe([(0, 400), (0.4, 550), (d, 420)], d)
+    return voix(f0, [(F1, 200, 1), (1000, 250, 0.6), (2200, 400, 0.15)], amp,
+                souffle=0.5, pente=0.6, rugosite=0.7, fmax=3500, tremblement=0.04)
 
 
 def foret_champignon():
@@ -905,8 +899,8 @@ def foret_champignon():
     pop = np.sin(phase(courbe([(0, 250), (0.03, 1100), (d, 1200)], d, log=True)))
     pop *= np.exp(-t / 0.025) * np.minimum(t / 0.001, 1)
     claque = bruit_bande(nb(0.02), 1500, 2000) * np.exp(-temps(0.02) / 0.003)
-    return assembler([(0, 0.5 * pop), (0, 0.15 * claque), (0.1, cloche(2093, 0.45, 0.07)),
-                      (0.17, cloche(2637, 0.45, 0.07)), (0.24, cloche(3136, 0.6, 0.07))])
+    return assembler([(0, 0.35 * pop), (0, 0.1 * claque), (0.1, cloche(2093, 0.45, 0.1)),
+                      (0.17, cloche(2637, 0.45, 0.1)), (0.24, cloche(3136, 0.6, 0.1))])
 
 
 def foret_coccinelle():
@@ -1041,9 +1035,10 @@ def fabriquer_tout():
             bruts[(univers, nom)] = x / np.abs(x).max() * CRETE
     # Le volume ressenti de chaque son quand sa pointe est à 0,7
     sonies = {cle: sonie(x) for cle, x in bruts.items()}
-    # La cible : un niveau que presque tous les sons atteignent
-    # (les sons très « pointus », comme les clochettes, sont un peu limités)
-    cible = np.percentile(list(sonies.values()), 25)
+    # La cible : le niveau « du milieu ». Les sons plus forts sont baissés ;
+    # les sons plus faibles (très « pointus ») sont montés en écrêtant
+    # doucement leurs pointes, au plus de 6 dB.
+    cible = np.median(list(sonies.values()))
     finis = {}
     for cle, x in bruts.items():
         gain_db = cible - sonies[cle]
