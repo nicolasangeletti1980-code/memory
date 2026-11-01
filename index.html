@@ -257,6 +257,19 @@
     @media (prefers-reduced-motion: reduce) {
       .monde svg, .decor span { animation: none; }
     }
+
+    /* Petits écrans (pas très hauts) : tout est un peu plus serré
+       pour que les 6 univers tiennent sans faire défiler */
+    @media (max-height: 640px) {
+      h1 { font-size: 1.45rem; margin: 2px 0 8px; }
+      .tailles { margin-bottom: 8px; }
+      .taille { min-height: 44px; padding: 4px 12px; font-size: 0.95rem; }
+      .taille span { font-size: 1.35rem; }
+      .mondes { gap: 8px; }
+      .monde { padding: 6px 6px 8px; gap: 2px; }
+      .monde strong { font-size: 1rem; }
+      .monde svg { width: min(26vw, 10.5vh); height: min(26vw, 10.5vh); }
+    }
   </style>
 </head>
 <body>

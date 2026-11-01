@@ -80,12 +80,17 @@
       gap: 6px;
       width: 100%;
       max-width: 520px;
+      /* "auto" en haut : la progression et le plateau sont centrés
+         dans la place libre entre le titre et les boutons du bas */
+      margin-top: auto;
       margin-bottom: 12px;
       touch-action: none;
     }
 
     .case {
       flex: 0 1 44px;
+      min-width: 0;          /* la case ne grandit pas à cause du dessin */
+      overflow: hidden;
       aspect-ratio: 1 / 1;
       border-radius: 10px;
       border: 2px dashed rgba(255, 255, 255, 0.9);
@@ -94,6 +99,7 @@
     }
 
     .case svg {
+      display: block;
       width: 100%;
       height: 100%;
     }
@@ -125,6 +131,7 @@
       width: min(100%, 100dvh - 250px, 520px);
       /* Un doigt qui glisse sur les cartes ne fait ni défiler ni zoomer */
       touch-action: none;
+      margin-bottom: auto;
     }
 
     /* Mode chenille : 3 x 4 grandes cartes (le plateau est plus haut que large) */
