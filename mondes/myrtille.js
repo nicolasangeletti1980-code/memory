@@ -134,7 +134,7 @@
         //   à peu près aussi long que le crâne, truffe noire.
         '<svg viewBox="0 0 100 100">' +
         // Le cou et le poitrail
-        avecContour('<path d="M15 98 Q15 76 34 67 L66 67 Q85 76 85 98 Z"/>', NOIR, NOIR_CONTOUR) +
+        avecContour('<path d="M15 96 Q15 76 34 67 L66 67 Q85 76 85 96 Z"/>', NOIR, NOIR_CONTOUR) +
         // Les reflets du poil brillant sur le poitrail
         '<path d="M22 88 Q24 78 32 73 M78 88 Q76 78 68 73" stroke="' + BRILLANT + '" stroke-width="2" fill="none" stroke-linecap="round"/>' +
         // Les deux taches feu du poitrail, côte à côte

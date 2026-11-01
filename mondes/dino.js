@@ -47,7 +47,7 @@
       dessin:
         '<svg viewBox="0 0 100 100">' +
         // La grande collerette derrière la tête
-        '<circle cx="66" cy="40" r="19" fill="#ffd35c" stroke="#d0661a" stroke-width="2.5"/>' +
+        avecContour('<circle cx="66" cy="40" r="19"/>', "#ffd35c", "#d0661a") +
         '<circle cx="56" cy="30" r="2.5" fill="#ff8a2a"/><circle cx="66" cy="25" r="2.5" fill="#ff8a2a"/><circle cx="52" cy="40" r="2.5" fill="#ff8a2a"/><circle cx="77" cy="28" r="2.5" fill="#ff8a2a"/>' +
         avecContour(
           '<path d="M24 58 Q10 56 4 64 Q16 66 28 66 Z"/>' +
@@ -57,7 +57,7 @@
           "#ff9a3c", "#d0661a") +
         // Les trois cornes
         '<path d="M68 46 L71 26 L75 45 Z M78 46 L86 29 L84 49 Z M86 52 L95 46 L90 57 Z" fill="#fff3d0" stroke="#c9a46a" stroke-width="2" stroke-linejoin="round"/>' +
-        oeil(74, 51, 3.8) +
+        oeil(74, 51, 4.3) +
         sourire(79, 59, 8) +
         joue(70, 58) +
         '</svg>'
@@ -78,7 +78,7 @@
         '<path d="M56 62 Q66 46 70 22" stroke="#5aa8f0" stroke-width="11" fill="none" stroke-linecap="round"/>' +
         // Les taches sur le dos
         '<circle cx="36" cy="62" r="3.5" fill="#3f8ad8"/><circle cx="46" cy="58" r="2.5" fill="#3f8ad8"/><circle cx="52" cy="66" r="3" fill="#3f8ad8"/>' +
-        oeil(77, 16, 3.2) +
+        oeil(77, 16, 3.8) +
         sourire(82, 22, 6) +
         joue(74, 22) +
         '</svg>'
@@ -98,7 +98,7 @@
           '<path d="M28 68 h9 v15 h-9 Z M40 70 h9 v14 h-9 Z M52 70 h9 v14 h-9 Z M60 67 h9 v15 h-9 Z"/>' +
           '<ellipse cx="77" cy="64" rx="11" ry="8"/>',
           "#a77bf0", "#6c43b8") +
-        oeil(78, 61, 3.2) +
+        oeil(78, 61, 3.8) +
         sourire(83, 67, 6) +
         joue(74, 67) +
         '</svg>'
@@ -109,8 +109,12 @@
       dessin:
         '<svg viewBox="0 0 100 100">' +
         // Les deux grandes ailes
-        '<path d="M48 52 L6 34 Q14 50 10 62 Q30 54 48 62 Z" fill="#ffb3c6" stroke="#c43c63" stroke-width="2.5" stroke-linejoin="round"/>' +
-        '<path d="M52 52 L94 34 Q86 50 90 62 Q70 54 52 62 Z" fill="#ffb3c6" stroke="#c43c63" stroke-width="2.5" stroke-linejoin="round"/>' +
+        avecContour(
+          '<path d="M48 52 L7 35 Q14 50 10 62 Q30 54 48 62 Z"/>' +
+          '<path d="M52 52 L93 35 Q86 50 90 62 Q70 54 52 62 Z"/>',
+          "#ffb3c6", "#c43c63") +
+        // Les petits plis des ailes
+        '<path d="M44 56 Q30 52 16 44 M56 56 Q70 52 84 44" stroke="#f08aa8" stroke-width="2" fill="none" stroke-linecap="round"/>' +
         // La crête, puis le bec jaune
         '<path d="M50 30 L32 18 L54 26 Z" fill="#ff6f91" stroke="#c43c63" stroke-width="2.5" stroke-linejoin="round"/>' +
         '<path d="M60 32 L86 38 L60 41 Z" fill="#ffd23f" stroke="#d9a400" stroke-width="2" stroke-linejoin="round"/>' +
@@ -119,7 +123,7 @@
           '<ellipse cx="56" cy="34" rx="10" ry="9"/>' +
           '<path d="M44 72 l-3 10 l6 -2 Z M56 72 l3 10 l-6 -2 Z"/>',
           "#ff6f91", "#c43c63") +
-        oeil(56, 31, 3.5) +
+        oeil(56, 31, 4.1) +
         joue(52, 39) +
         '</svg>'
     },
@@ -143,7 +147,7 @@
         '<circle cx="28" cy="54" r="2.5" fill="#c98a2a"/><circle cx="38" cy="49" r="2.5" fill="#c98a2a"/>' +
         '<circle cx="50" cy="48" r="2.5" fill="#c98a2a"/><circle cx="61" cy="51" r="2.5" fill="#c98a2a"/>' +
         '<circle cx="40" cy="62" r="2" fill="#c98a2a"/><circle cx="52" cy="60" r="2" fill="#c98a2a"/>' +
-        oeil(79, 61, 3.4) +
+        oeil(79, 61, 3.9) +
         sourire(84, 68, 6) +
         joue(75, 68) +
         '</svg>'
@@ -154,7 +158,7 @@
       dessin:
         '<svg viewBox="0 0 100 100">' +
         // La tête du bébé qui sort de l'œuf
-        '<circle cx="50" cy="44" r="19" fill="#8fe05a" stroke="#4f9e2a" stroke-width="2.5"/>' +
+        avecContour('<circle cx="50" cy="44" r="19"/>', "#8fe05a", "#4f9e2a") +
         '<circle cx="42" cy="58" r="2" fill="#4f9e2a"/>' +
         oeil(43, 42, 5) + oeil(58, 42, 5) +
         '<path d="M44 52 Q51 59 58 52 Z" fill="#b0233a"/>' +
@@ -179,11 +183,12 @@
         '<circle cx="40" cy="16" r="8" fill="#d9d9e3"/><circle cx="52" cy="10" r="9" fill="#e6e6ee"/><circle cx="63" cy="17" r="7" fill="#d9d9e3"/>' +
         '<circle cx="30" cy="28" r="4" fill="#ff5a2a"/><circle cx="72" cy="26" r="4.5" fill="#ffb02e"/><circle cx="50" cy="24" r="3.5" fill="#ffd23f"/>' +
         // La montagne
-        '<path d="M12 90 L38 36 L62 36 L88 90 Z" fill="#b8734a" stroke="#7a4426" stroke-width="2.5" stroke-linejoin="round"/>' +
+        avecContour('<path d="M12 90 L38 36 L62 36 L88 90 Z"/>', "#b8734a", "#7a4426") +
+        '<path d="M34 50 L22 78" stroke="#d1916a" stroke-width="3" stroke-linecap="round"/>' +
         // La lave qui coule du sommet
         '<path d="M38 36 L62 36 L60 44 Q57 40 55 50 Q52 41 49 48 Q46 40 43 46 Q41 40 38 36 Z" fill="#ff5a2a" stroke="#c43c1a" stroke-width="2" stroke-linejoin="round"/>' +
         // Le visage du volcan
-        oeil(42, 62, 4) + oeil(58, 62, 4) +
+        oeil(42, 62, 4.6) + oeil(58, 62, 4.6) +
         '<path d="M41 71 Q50 81 59 71 Z" fill="#7a2a1a"/>' +
         joue(35, 70) + joue(65, 70) +
         '</svg>'
