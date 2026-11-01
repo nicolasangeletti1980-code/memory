@@ -143,6 +143,22 @@ def bruit_filtre(n, forme):
     return y / rms(y)                       # volume moyen = 1
 
 
+def forme_bouche(f, bouche, i=None):
+    """Combien la bouche laisse passer chaque fréquence f.
+    La gorge et la bouche sont des « tuyaux » qui résonnent les uns après
+    les autres (en série) : chaque résonance renforce sa zone puis fait
+    baisser tout ce qui est au-dessus. C'est ce qui fait les voyelles.
+    bouche = liste de (fréquence, largeur, force) ; force 1 = normal,
+    force plus petite = résonance plus discrète."""
+    g = 1.0
+    for F, B, G in bouche:
+        if i is not None:
+            F, B, G = F[i], B[i], G[i]
+        r = F * F / np.sqrt((F * F - f * f) ** 2 + (f * B) ** 2)
+        g = g * r ** G
+    return g
+
+
 def valeur(p, i):
     """Lit un réglage qui peut être un nombre fixe ou une courbe."""
     return p if np.isscalar(p) else p[min(i, len(p) - 1)]
@@ -210,10 +226,7 @@ def voix(f0, formants, amp, souffle=0.0, pente=1.0, rugosite=0.0,
     kmax = int(fmax / max(f0.min(), 20)) + 1
     for k in range(1, kmax + 1):
         fk = k * f0
-        g = np.zeros(n)
-        for F, B, G in bouche:
-            g += G * resonance(fk, F, B)
-        g *= k ** (-pente) * np.clip((fmax - fk) / (0.2 * fmax), 0, 1)
+        g = forme_bouche(fk, bouche) * k ** (-pente) * np.clip((fmax - fk) / (0.2 * fmax), 0, 1)
         if g.max() < 1e-6:
             continue
         son += g * np.sin(k * ph + de.uniform(0, 2 * np.pi))
@@ -225,8 +238,7 @@ def voix(f0, formants, amp, souffle=0.0, pente=1.0, rugosite=0.0,
     if souffle:
         def forme(tt, f):
             i = min(int(tt * SR), n - 1)
-            g = sum(G[i] * resonance(f, F[i], B[i]) for F, B, G in bouche)
-            return g * np.clip((fmax - f) / (0.2 * fmax), 0, 1)
+            return forme_bouche(f, bouche, i) * np.clip((fmax - f) / (0.2 * fmax), 0, 1)
         son += souffle * bruit_filtre(n, forme)
     return son * amp
 
