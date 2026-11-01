@@ -543,9 +543,16 @@ CRIS_DINO = {
 }
 
 
+def presence(x):
+    """Renforce doucement les fréquences 300-1500 Hz (environ +6 dB) :
+    le rugissement garde son caractère mais s'entend aussi sur le petit
+    haut-parleur d'un téléphone, qui ne joue pas les très graves."""
+    return filtre_fft(x, lambda f: 1 + resonance(f, 700, 1200))
+
+
 def dino(nom):
     hauteur, duree = CRIS_DINO[nom]
-    return lambda: rugissement(duree, hauteur, 0.25)
+    return lambda: presence(rugissement(duree, hauteur, 0.25))
 
 
 def dino_volcan():
@@ -569,7 +576,7 @@ def dino_volcan():
                    * np.exp(-tb / 0.12)) * np.minimum(tb / 0.003, 1)
     souffle = bruit_bande(nb(db), 500, 800) * np.exp(-tb / 0.1) * np.minimum(tb / 0.003, 1)
     # 3) Les crépitements de lave : de petits « crac » au hasard
-    morceaux = [(0, 0.5 * base / np.abs(base).max()), (0, 0.45 * gronde),
+    morceaux = [(0, 0.3 * base / np.abs(base).max()), (0, 0.6 * gronde),
                 (0.08, 0.7 * boum + 0.35 * souffle)]
     for _ in range(22):
         dc = 0.012
@@ -590,12 +597,13 @@ def dino_diplodocus():
     amp = courbe([(0, 0), (0.08, 0.8), (0.4, 1), (0.9, 0.8), (d, 0)], d)
     appel = voix(f0, [(F1, 150, 1), (F2, 200, 0.7), (2000, 300, 0.2)], amp, souffle=0.25,
                  pente=0.6, rugosite=0.15, fmax=3000, vibrato=(4, 0.015))
+    base = presence(base)
     return assembler([(0, 0.5 * base / np.abs(base).max()), (0, appel / np.abs(appel).max())])
 
 
 def dino_victoire():
     # rugissementVictoire : le grand rugissement du T-rex (un grave + un aigu)
-    return assembler([(0, rugissement(1.9, 90, 0.35)), (0.05, rugissement(1.7, 150, 0.2))])
+    return presence(assembler([(0, rugissement(1.9, 90, 0.35)), (0.05, rugissement(1.7, 150, 0.2))]))
 
 
 # ------------------------------ FERME --------------------------------

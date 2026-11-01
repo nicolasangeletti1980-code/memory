@@ -15,22 +15,25 @@
       dessin:
         '<svg viewBox="0 0 100 100">' +
         // La queue enroulée (un gros trait foncé, puis un trait clair dessus)
-        '<path d="M44 64 Q38 84 52 87 Q63 88 62 79 Q61 72 54 75" stroke="#e08a1e" stroke-width="13" fill="none" stroke-linecap="round"/>' +
-        '<path d="M44 64 Q38 84 52 87 Q63 88 62 79 Q61 72 54 75" stroke="#ffb547" stroke-width="8" fill="none" stroke-linecap="round"/>' +
-        // La nageoire du dos
-        '<path d="M34 39 Q12 50 30 65 Z" fill="#ffe08a" stroke="#e08a1e" stroke-width="2" stroke-linejoin="round"/>' +
-        // Le corps, la tête, le museau et la petite couronne
+        '<path d="M44 64 Q38 86 53 89 Q65 90 64 80 Q63 72 55 75" stroke="#c9741a" stroke-width="14" fill="none" stroke-linecap="round"/>' +
+        '<path d="M44 64 Q38 86 53 89 Q65 90 64 80 Q63 72 55 75" stroke="#ffb547" stroke-width="8.5" fill="none" stroke-linecap="round"/>' +
+        // La nageoire du dos, avec ses petits rayons
+        '<path d="M33 38 Q10 50 29 66 Z" fill="#ffe08a" stroke="#c9741a" stroke-width="2.5" stroke-linejoin="round"/>' +
+        '<path d="M31 44 l-9 4 M30 51 l-10 3 M30 58 l-7 2" stroke="#f0b040" stroke-width="1.8" stroke-linecap="round"/>' +
+        // Le corps, la tête, le long museau et la petite couronne
         avecContour(
-          '<ellipse cx="45" cy="50" rx="14" ry="19" transform="rotate(-12 45 50)"/>' +
-          '<ellipse cx="52" cy="25" rx="13" ry="11"/>' +
-          '<ellipse cx="68" cy="29" rx="10" ry="4.5" transform="rotate(14 68 29)"/>' +
-          '<path d="M44 16 L46 7 L50 14 L54 6 L57 15 Z"/>',
-          "#ffb547", "#e08a1e") +
+          '<ellipse cx="45" cy="50" rx="15" ry="20" transform="rotate(-12 45 50)"/>' +
+          '<ellipse cx="52" cy="25" rx="14" ry="12"/>' +
+          '<ellipse cx="70" cy="30" rx="11" ry="5" transform="rotate(14 70 30)"/>' +
+          '<path d="M43 16 L45 6 L50 13 L54 5 L58 15 Z"/>',
+          "#ffb547", "#c9741a") +
         // Le ventre clair avec ses rayures
-        '<ellipse cx="51" cy="52" rx="7" ry="13" fill="#ffe08a" transform="rotate(-12 51 52)"/>' +
-        '<path d="M46 44 h10 M45 50 h11 M45 56 h10 M45 62 h8" stroke="#e8a443" stroke-width="1.6" stroke-linecap="round"/>' +
-        oeil(55, 22, 3.5) +
-        '<ellipse cx="52" cy="31" rx="4" ry="2.5" fill="#ff8fa3" opacity="0.6"/>' +
+        '<ellipse cx="51" cy="53" rx="7.5" ry="13" fill="#ffe08a" transform="rotate(-12 51 53)"/>' +
+        '<path d="M46 45 h10 M45 51 h11 M45 57 h10 M45 63 h8" stroke="#e8a443" stroke-width="1.8" stroke-linecap="round"/>' +
+        oeil(55, 22, 4.3) +
+        // Le petit sourire au bout du museau
+        '<path d="M74 33 q3 1.5 5 -1" stroke="#1d2b3a" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
+        joue(53, 31) +
         '</svg>'
     },
     {
@@ -38,16 +41,22 @@
       dessin:
         '<svg viewBox="0 0 100 100">' +
         // La queue et les nageoires (orange bordé de noir)
-        '<path d="M22 52 L6 37 Q11 52 6 67 Z" fill="#ff7a1a" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/>' +
-        '<path d="M36 34 Q50 20 64 34 Z" fill="#ff7a1a" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/>' +
-        '<path d="M42 70 Q50 82 58 70 Z" fill="#ff7a1a" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/>' +
-        // Le corps
-        '<ellipse cx="48" cy="52" rx="30" ry="20" fill="#ff7a1a" stroke="#2b2b2b" stroke-width="2"/>' +
-        // Les deux bandes blanches
-        '<ellipse cx="38" cy="52" rx="5" ry="18.5" fill="#fff" stroke="#2b2b2b" stroke-width="2"/>' +
-        '<ellipse cx="59" cy="52" rx="4.5" ry="17.5" fill="#fff" stroke="#2b2b2b" stroke-width="2"/>' +
-        oeilPoisson(68, 47, 5.5) +
-        sourire(73, 58, 7) +
+        avecContour(
+          '<path d="M24 52 L7 36 Q12 52 7 68 Z"/>' +
+          '<path d="M34 36 Q48 18 64 34 Z"/>' +
+          '<path d="M40 68 Q48 84 58 68 Z"/>' +
+          // Le corps
+          '<ellipse cx="50" cy="52" rx="32" ry="21"/>',
+          "#ff7a1a", "#2b2b2b") +
+        // Les trois bandes blanches (bordées de noir)
+        '<path d="M64 33 Q70 52 64 71 Q58 52 64 33 Z" fill="#fff" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/>' +
+        '<path d="M44 31.5 Q52 52 44 72.5 Q36 52 44 31.5 Z" fill="#fff" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/>' +
+        '<path d="M24 41 Q28 52 24 63 Q20 52 24 41 Z" fill="#fff" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/>' +
+        // Le bord noir des nageoires
+        '<path d="M38 33 Q48 22 60 32 M44 74 Q48 80 54 74" stroke="#2b2b2b" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+        oeil(73, 46, 5) +
+        sourire(76, 58, 8) +
+        joue(71, 56) +
         '</svg>'
     },
     {
@@ -55,87 +64,128 @@
       dessin:
         '<svg viewBox="0 0 100 100">' +
         // Une étoile à 5 branches aux bouts arrondis
-        '<polygon points="50,18 60,40.3 84.2,42.9 66.2,59.3 71.2,83.1 50,71 28.8,83.1 33.8,59.3 15.8,42.9 40,40.3" ' +
-        'fill="#ff8fa3" stroke="#e5647d" stroke-width="7" stroke-linejoin="round"/>' +
+        // (dessinée 2 fois : le contour foncé, puis le rose par-dessus)
+        '<polygon points="50,13 61.5,38.5 89,41.5 68.5,60 74,87 50,73 26,87 31.5,60 11,41.5 38.5,38.5" ' +
+        'fill="#e5647d" stroke="#c94461" stroke-width="12" stroke-linejoin="round"/>' +
+        '<polygon points="50,13 61.5,38.5 89,41.5 68.5,60 74,87 50,73 26,87 31.5,60 11,41.5 38.5,38.5" ' +
+        'fill="#ff8fa3" stroke="#ff8fa3" stroke-width="6" stroke-linejoin="round"/>' +
         // Les petits points sur l'étoile
-        '<circle cx="50" cy="30" r="2" fill="#ffd0da"/><circle cx="74" cy="46" r="2" fill="#ffd0da"/>' +
-        '<circle cx="66" cy="73" r="2" fill="#ffd0da"/><circle cx="34" cy="73" r="2" fill="#ffd0da"/>' +
-        '<circle cx="26" cy="46" r="2" fill="#ffd0da"/>' +
-        oeil(44, 52, 3.2) + oeil(56, 52, 3.2) +
-        sourire(50, 60, 9) +
+        '<circle cx="50" cy="26" r="2.2" fill="#ffd0da"/><circle cx="77" cy="44" r="2.2" fill="#ffd0da"/>' +
+        '<circle cx="68" cy="77" r="2.2" fill="#ffd0da"/><circle cx="32" cy="77" r="2.2" fill="#ffd0da"/>' +
+        '<circle cx="23" cy="44" r="2.2" fill="#ffd0da"/>' +
+        oeil(43, 51, 4.2) + oeil(57, 51, 4.2) +
+        sourire(50, 60, 10) +
+        joues(37, 63, 59) +
         '</svg>'
     },
     {
       id: "saint-jacques", nom: "Une coquille Saint-Jacques", fond: "#fff6dc",
       dessin:
         '<svg viewBox="0 0 100 100">' +
-        // Les deux petites "oreilles" en bas de la coquille
-        '<path d="M38 78 L28 90 L50 87 L72 90 L62 78 Z" fill="#ffc35a" stroke="#d98f1f" stroke-width="2.5" stroke-linejoin="round"/>' +
-        // L'éventail de la coquille
-        '<path d="M50 84 L14 44 Q16 16 50 12 Q84 16 86 44 Z" fill="#ffd27a" stroke="#d98f1f" stroke-width="2.5" stroke-linejoin="round"/>' +
+        avecContour(
+          // Les deux petites "oreilles" en bas de la coquille
+          '<path d="M36 76 L25 90 L50 87 L75 90 L64 76 Z"/>' +
+          // L'éventail de la coquille
+          '<path d="M50 84 L12 44 Q14 13 50 9 Q86 13 88 44 Z"/>',
+          "#ffd27a", "#c98a1f") +
         // Les rayures qui partent du bas
-        '<path d="M50 84 L22 32 M50 84 L34 19 M50 84 L50 14 M50 84 L66 19 M50 84 L78 32" stroke="#e3a33a" stroke-width="2.5" stroke-linecap="round"/>' +
-        // Une perle rose
-        '<circle cx="50" cy="56" r="7" fill="#ffd6ec" stroke="#ff8fc7" stroke-width="2"/>' +
-        '<circle cx="48" cy="54" r="2" fill="#fff"/>' +
+        '<path d="M50 84 L20 30 M50 84 L33 16 M50 84 L50 11 M50 84 L67 16 M50 84 L80 30" stroke="#e3a33a" stroke-width="2.5" stroke-linecap="round"/>' +
+        // Le visage, sur un petit nuage clair pour bien le voir
+        '<ellipse cx="50" cy="48" rx="17" ry="12" fill="#ffe7b0"/>' +
+        oeil(43, 45, 4.2) + oeil(57, 45, 4.2) +
+        sourire(50, 53, 8) +
+        joues(37, 63, 52) +
+        // Une petite perle rose posée à côté
+        '<circle cx="84" cy="80" r="7" fill="#ffd6ec" stroke="#e070a8" stroke-width="2"/>' +
+        '<circle cx="82" cy="78" r="2" fill="#fff"/>' +
         '</svg>'
     },
     {
-      id: "chirurgien", nom: "Un poisson chirurgien bleu", fond: "#e0f0ff",
+      id: "chirurgien", nom: "Dory, le poisson bleu", fond: "#e0f0ff",
       dessin:
+        // Un poisson chirurgien bleu un peu étourdi, comme Dory :
+        // corps ovale et allongé, grande tache noire en forme de palette,
+        // queue jaune, très grands yeux mauves et grand sourire.
         '<svg viewBox="0 0 100 100">' +
         // La queue jaune
-        '<path d="M22 52 L6 36 Q11 52 6 68 Z" fill="#ffd23f" stroke="#1d2b4a" stroke-width="2" stroke-linejoin="round"/>' +
-        // Le corps bleu
-        '<ellipse cx="50" cy="52" rx="30" ry="22" fill="#2f6fe0" stroke="#1d2b4a" stroke-width="2"/>' +
-        // La grande tache foncée sur le dos
-        '<path d="M27 46 Q46 30 70 40 Q60 46 52 44 Q44 58 31 60 Q38 51 27 46 Z" fill="#13235a"/>' +
-        // La petite nageoire jaune
-        '<path d="M56 58 Q64 70 70 60 Z" fill="#ffd23f" stroke="#1d2b4a" stroke-width="1.5" stroke-linejoin="round"/>' +
-        oeilPoisson(70, 47, 6.5) +
-        sourire(74, 60, 7) +
+        avecContour('<path d="M20 52 L4 34 Q11 52 4 70 Z"/>', "#ffd23f", "#13235a") +
+        // La nageoire du dos
+        avecContour('<path d="M26 36 Q46 22 70 32 L66 38 L28 42 Z"/>', "#2860e0", "#13235a") +
+        // Le corps bleu, ovale et allongé
+        avecContour('<ellipse cx="50" cy="53" rx="34" ry="21"/>', "#2f6ff0", "#13235a") +
+        // La grande tache noire en forme de palette (avec son trou bleu)
+        '<path d="M58 36 Q40 30 24 40 Q18 46 22 52 Q30 52 32 60 Q34 68 28 72 Q42 72 46 60 Q48 50 60 46 Z" fill="#13235a"/>' +
+        '<ellipse cx="34" cy="47" rx="6" ry="4" fill="#2f6ff0"/>' +
+        // La petite nageoire de côté, avec sa bande jaune
+        '<path d="M52 64 Q56 76 66 72 Q62 66 58 62 Z" fill="#2860e0" stroke="#13235a" stroke-width="2" stroke-linejoin="round"/>' +
+        '<path d="M57 70 Q61 73 65 71.5" stroke="#ffd23f" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+        // Les deux très grands yeux ronds aux iris mauves
+        '<circle cx="66" cy="44" r="9.5" fill="#fff" stroke="#13235a" stroke-width="2"/>' +
+        '<circle cx="82" cy="46" r="7.5" fill="#fff" stroke="#13235a" stroke-width="2"/>' +
+        '<circle cx="67.5" cy="45" r="6" fill="#9b6bd6"/><circle cx="83" cy="47" r="4.8" fill="#9b6bd6"/>' +
+        oeil(68, 45.5, 3.5) + oeil(83.3, 47.3, 2.8) +
+        // Le grand sourire joyeux, bouche ouverte
+        '<path d="M70 58 Q78 70 88 58 Q79 61 70 58 Z" fill="#7a1f3a" stroke="#13235a" stroke-width="1.8" stroke-linejoin="round"/>' +
+        '<path d="M74 62 Q79 66 84 61.5" stroke="#ff7fa0" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+        joue(64, 60) +
         '</svg>'
     },
     {
       id: "sirene", nom: "Une sirène", fond: "#f0e4ff",
       dessin:
         '<svg viewBox="0 0 100 100">' +
-        // Les longs cheveux (derrière la tête)
-        '<path d="M35 27 Q34 9 50 10 Q67 9 66 28 Q71 46 61 52 L39 52 Q29 45 35 27 Z" fill="#ff5a3c"/>' +
-        // La queue de poisson et ses nageoires
-        '<path d="M52 79 Q40 94 32 86 Q42 84 52 79 Z" fill="#2ec4b6" stroke="#1a9488" stroke-width="2" stroke-linejoin="round"/>' +
-        '<path d="M52 79 Q64 95 72 86 Q62 84 52 79 Z" fill="#2ec4b6" stroke="#1a9488" stroke-width="2" stroke-linejoin="round"/>' +
-        '<path d="M41 53 L59 53 Q62 70 54 80 L50 82 Q43 70 41 53 Z" fill="#2ec4b6" stroke="#1a9488" stroke-width="2" stroke-linejoin="round"/>' +
-        '<path d="M45 62 q5 3 10 0 M46 70 q4 3 8 0" stroke="#1a9488" stroke-width="1.5" fill="none" stroke-linecap="round"/>' +
+        // Les longs cheveux roux (derrière la tête et le dos)
+        avecContour('<path d="M29 32 Q26 7 50 7 Q74 7 71 32 Q76 50 69 62 Q62 56 61 46 L39 46 Q38 56 31 62 Q24 50 29 32 Z"/>', "#ff5a3c", "#b8361e") +
+        // La nageoire au bout de la queue
+        avecContour('<path d="M54 84 Q64 72 82 78 Q74 84 74 95 Q64 88 54 88 Z"/>', "#2ec4b6", "#13897f") +
+        // La queue de poisson turquoise
+        avecContour('<path d="M39 56 L61 56 Q66 74 60 84 Q55 90 50 88 Q42 76 39 56 Z"/>', "#2ec4b6", "#13897f") +
+        // Les écailles
+        '<path d="M45 64 q3 3 6 0 q3 3 6 0 M47 72 q3 3 6 0 M50 80 q2.5 2.5 5 0" stroke="#13897f" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
         // Les bras et le buste
-        '<path d="M43 44 Q34 50 36 58 M57 44 Q66 50 64 58" stroke="#ffd9c2" stroke-width="4" fill="none" stroke-linecap="round"/>' +
-        '<ellipse cx="50" cy="46" rx="8" ry="9" fill="#ffd9c2"/>' +
-        // Le haut en coquillages
-        '<circle cx="46" cy="45" r="3.5" fill="#ff8fc7"/><circle cx="54" cy="45" r="3.5" fill="#ff8fc7"/>' +
-        // La tête et la frange
-        '<circle cx="50" cy="26" r="11" fill="#ffd9c2"/>' +
-        '<path d="M39 25 Q42 13 52 14 Q62 15 61 24 Q55 18 47 21 Q43 23 39 25 Z" fill="#ff5a3c"/>' +
-        oeil(46, 27, 2.2) + oeil(54, 27, 2.2) +
-        sourire(50, 32, 6) +
-        '<ellipse cx="43" cy="31" rx="2.5" ry="1.5" fill="#ff8fa3" opacity="0.7"/>' +
-        '<ellipse cx="57" cy="31" rx="2.5" ry="1.5" fill="#ff8fa3" opacity="0.7"/>' +
+        '<path d="M42 48 Q33 52 35 60 M58 48 Q67 52 65 60" stroke="#e8a888" stroke-width="7" fill="none" stroke-linecap="round"/>' +
+        '<path d="M42 48 Q33 52 35 60 M58 48 Q67 52 65 60" stroke="#ffd9c2" stroke-width="3.8" fill="none" stroke-linecap="round"/>' +
+        avecContour('<ellipse cx="50" cy="50" rx="10" ry="9"/>', "#ffd9c2", "#e8a888") +
+        // Le haut rose (un bandeau tout simple)
+        '<path d="M40.5 49 Q50 53 59.5 49 L59 55 Q50 58 41 55 Z" fill="#ff8fc7" stroke="#d6559a" stroke-width="1.8" stroke-linejoin="round"/>' +
+        // La tête
+        avecContour('<circle cx="50" cy="28" r="14"/>', "#ffd9c2", "#e8a888") +
+        // La frange rousse
+        '<path d="M36 26 Q37 12 51 13 Q64 13 64 26 Q58 18 50 21 Q44 18 36 26 Z" fill="#ff5a3c"/>' +
+        // Une étoile de mer jaune dans les cheveux
+        '<polygon points="66,14 67.6,18.2 72,18.4 68.6,21.2 69.8,25.4 66,23 62.2,25.4 63.4,21.2 60,18.4 64.4,18.2" fill="#ffd23f" stroke="#d99a00" stroke-width="1.5" stroke-linejoin="round"/>' +
+        oeil(44.5, 29, 3.4) + oeil(55.5, 29, 3.4) +
+        sourire(50, 35, 7) +
+        joues(40, 60, 34) +
         '</svg>'
     },
     {
-      id: "jaune", nom: "Un poisson jaune à rayures bleues", fond: "#fff9d6",
+      id: "jaune", nom: "Polochon, le poisson jaune", fond: "#fff9d6",
       dessin:
+        // Un poisson tropical jaune tout rond, comme Polochon :
+        // corps dodu comme un ballon, larges bandes bleues,
+        // nageoires bleues, grosses lèvres et petit air inquiet.
+        // (Il regarde à gauche, pour ne pas ressembler à Dory.)
         '<svg viewBox="0 0 100 100">' +
-        // La queue et la nageoire du dos (bleues)
-        '<path d="M24 52 L7 38 Q13 52 7 66 Z" fill="#2f8fe0" stroke="#1d5fa8" stroke-width="2" stroke-linejoin="round"/>' +
-        '<path d="M36 32 Q50 14 64 32 Z" fill="#2f8fe0" stroke="#1d5fa8" stroke-width="2" stroke-linejoin="round"/>' +
+        // La queue bleue (à droite) et la grande nageoire du dos
+        avecContour('<path d="M78 54 L96 38 Q90 54 96 70 Z"/>', "#2f7fe0", "#164a9a") +
+        avecContour('<path d="M30 32 Q40 4 70 20 Q66 28 64 32 Z"/>', "#2f7fe0", "#164a9a") +
         // Le corps tout rond
-        '<ellipse cx="50" cy="53" rx="28" ry="25" fill="#ffd23f" stroke="#e0a800" stroke-width="2"/>' +
-        // Les rayures bleues
-        '<path d="M40 32 Q45 44 40 56" stroke="#2f8fe0" stroke-width="6" fill="none" stroke-linecap="round"/>' +
-        '<path d="M54 30 Q59 42 54 54" stroke="#2f8fe0" stroke-width="6" fill="none" stroke-linecap="round"/>' +
-        oeilPoisson(66, 47, 6.5) +
-        sourire(70, 61, 8) +
-        '<ellipse cx="60" cy="58" rx="4" ry="2.5" fill="#ff8fa3" opacity="0.6"/>' +
+        avecContour('<circle cx="50" cy="56" r="31"/>', "#ffd93b", "#d99a00") +
+        // Les larges bandes bleues qui suivent la forme ronde
+        '<path d="M57 26 Q53 56 57 86 L67 81.5 Q63 56 67 30.5 Z" fill="#1f5fd6"/>' +
+        '<path d="M73 35.5 Q70 56 73 76.5 L78 69 Q76 56 78 43 Z" fill="#1f5fd6"/>' +
+        // La petite nageoire de côté, bleue
+        '<path d="M50 68 Q56 82 64 74 Q60 70 56 64 Z" fill="#2f7fe0" stroke="#164a9a" stroke-width="2" stroke-linejoin="round"/>' +
+        // Les grands yeux avec des sourcils un peu inquiets
+        '<circle cx="31" cy="46" r="8" fill="#fff" stroke="#164a9a" stroke-width="2"/>' +
+        '<circle cx="46" cy="44" r="8" fill="#fff" stroke="#164a9a" stroke-width="2"/>' +
+        oeil(30, 47, 4.5) + oeil(45, 45, 4.5) +
+        '<path d="M24 36 Q29 33 34 36 M42 34 Q47 32 52 34" stroke="#164a9a" stroke-width="2.2" fill="none" stroke-linecap="round"/>' +
+        // La grande bouche aux lèvres épaisses
+        '<ellipse cx="27" cy="63" rx="8" ry="6.5" fill="#ff9a3c" stroke="#c9601a" stroke-width="2"/>' +
+        '<path d="M21 63 Q27 60.5 33 63 Q27 65.5 21 63 Z" fill="#7a1f3a"/>' +
+        joue(40, 58) +
         '</svg>'
     },
     {
@@ -143,17 +193,20 @@
       dessin:
         '<svg viewBox="0 0 100 100">' +
         // Le trident est dessiné 2 fois : en foncé (contour) puis en doré
-        '<g stroke="#c48a0a" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none">' +
+        '<g stroke="#b07a08" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none">' +
         '<path d="M30 22 L30 36 Q30 48 50 48 Q70 48 70 36 L70 22 M50 14 L50 90"/></g>' +
-        '<g stroke="#ffc83d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none">' +
+        '<g stroke="#ffc83d" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" fill="none">' +
         '<path d="M30 22 L30 36 Q30 48 50 48 Q70 48 70 36 L70 22 M50 14 L50 90"/></g>' +
         // Les trois pointes
-        '<path d="M24 25 L30 8 L36 25 Z M44 17 L50 2 L56 17 Z M64 25 L70 8 L76 25 Z" fill="#ffc83d" stroke="#c48a0a" stroke-width="2.5" stroke-linejoin="round"/>' +
+        '<path d="M23 25 L30 7 L37 25 Z M43 17 L50 2 L57 17 Z M63 25 L70 7 L77 25 Z" fill="#ffc83d" stroke="#b07a08" stroke-width="2.5" stroke-linejoin="round"/>' +
+        // Le petit reflet de lumière sur le manche
+        '<path d="M48.5 58 v20" stroke="#fff3c0" stroke-width="2" stroke-linecap="round"/>' +
         // La pierre précieuse
-        '<circle cx="50" cy="49" r="5" fill="#2ec4b6" stroke="#c48a0a" stroke-width="2"/>' +
-        '<circle cx="48.5" cy="47.5" r="1.5" fill="#fff"/>' +
+        '<circle cx="50" cy="49" r="6" fill="#2ec4b6" stroke="#b07a08" stroke-width="2"/>' +
+        '<circle cx="48.3" cy="47.3" r="1.8" fill="#fff"/>' +
         etincelle(18, 60, 6, "#2f8fe0") +
         etincelle(82, 66, 5, "#2ec4b6") +
+        etincelle(80, 86, 4, "#ff8fc7") +
         '</svg>'
     }
   ];
