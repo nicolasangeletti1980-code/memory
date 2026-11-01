@@ -5,7 +5,7 @@
 
 // Le nom de la copie. Si on change les jeux, on change ce numéro
 // pour forcer une copie toute neuve.
-const NOM_COPIE = "memory-myrtille-v3";
+const NOM_COPIE = "memory-myrtille-v4";
 
 // On lit la liste des univers et leurs cartes,
 // pour savoir quels fichiers (pages, dessins, sons) garder.
@@ -27,6 +27,10 @@ const FICHIERS = [
   "./sons.js",
   "./musique.js",
   "./mondes/outils.js",
+  // Les anciennes adresses (favoris, raccourcis) : elles doivent marcher sans internet
+  "./myrtille.html",
+  "./mer.html",
+  "./dino.html",
   "./manifest.webmanifest",
   "./icone-180.png",
   "./icone-192.png",
@@ -97,13 +101,19 @@ self.addEventListener("fetch", function (evenement) {
     return;   // on ne s'occupe que des fichiers du jeu
   }
   // Les sons sont demandés "par morceaux" par le lecteur audio
-  // (surtout sur iPhone) : on découpe le morceau demandé dans la copie.
+  // (surtout sur iPhone).
+  // - avec internet : on les prend en ligne, comme le reste. (Si on mélange
+  //   des morceaux venus d'internet et des morceaux découpés dans la copie,
+  //   Chrome refuse le son : il reste muet.)
+  // - sans internet : on découpe le morceau demandé dans la copie.
   if (demande.headers.has("range")) {
     evenement.respondWith(
-      caches.match(demande.url).then(function (copie) {
-        if (!copie) return fetch(demande);
-        return copie.arrayBuffer().then(function (donnees) {
-          return morceau(donnees, demande.headers.get("range"), copie.headers.get("content-type"));
+      fetch(demande).catch(function () {
+        return caches.match(demande.url).then(function (copie) {
+          if (!copie) return Response.error();
+          return copie.arrayBuffer().then(function (donnees) {
+            return morceau(donnees, demande.headers.get("range"), copie.headers.get("content-type"));
+          });
         });
       })
     );
