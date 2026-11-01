@@ -443,7 +443,7 @@ def myrtille_ours_blanc():
     # Boîte à musique : le début de « Au clair de la lune » (do do do ré mi ré)
     notes = [(0, 1046.5), (0.16, 1046.5), (0.32, 1046.5), (0.48, 1174.7),
              (0.64, 1318.5), (0.96, 1174.7)]
-    return melodie_boite(notes, 0.62)
+    return melodie_boite(notes, 0.56)
 
 
 def myrtille_ours_marron():
@@ -451,8 +451,8 @@ def myrtille_ours_marron():
     # (mi mi sol, mi mi sol, do)
     notes = [(0, 659.3), (0.12, 659.3), (0.24, 784), (0.54, 659.3),
              (0.66, 659.3), (0.78, 784), (1.08, 1046.5)]
-    return assembler([(0, melodie_boite(notes, 0.5)),
-                      (1.08, 0.5 * note_boite(523.25, 0.5))])   # un do grave en plus : câlin
+    return assembler([(0, melodie_boite(notes, 0.46)),
+                      (1.08, 0.5 * note_boite(523.25, 0.46))])   # un do grave en plus : câlin
 
 
 def myrtille_victoire():
@@ -685,19 +685,26 @@ def ferme_tracteur():
     demarreur = voix(courbe([(0, 70), (d, 95)], d), [(300, 300, 1), (900, 500, 0.3)],
                      courbe([(0, 0), (0.03, 1), (d, 0.6)], d) * (0.55 + 0.45 * np.sin(2 * np.pi * 7 * t)),
                      souffle=0.4, pente=1.0, rugosite=0.4, fmax=2500)
-    morceaux = [(0, 0.25 * demarreur)]
-    debut, ecart, i = 0.42, 0.2, 0
+    # Les moments des explosions : de plus en plus rapprochées, puis régulières
+    explosions = []
+    debut, ecart = 0.42, 0.2
     while debut < 1.45:
-        morceaux.append((debut, coup_moteur(1.0 if i % 2 == 0 else 0.75)))
+        explosions.append(debut)
         debut += ecart
-        ecart = max(0.12, ecart * 0.9)
-        i += 1
-    # le « ronron » continu du moteur, qui bat au rythme des explosions
+        ecart = max(0.13, ecart * 0.9)
+    morceaux = [(0, 0.25 * demarreur)]
+    for i, debut in enumerate(explosions):
+        morceaux.append((debut, coup_moteur(1.0 if i % 2 == 0 else 0.75)))
+    # Le « ronron » du moteur entre les explosions : il bat au même rythme
+    # (fort juste après chaque explosion, puis il retombe)
     d = 1.5 - 0.42
-    ronron = bruit_bande(nb(d), 350, 500) * 0.25 * np.minimum(temps(d) / 0.05, 1)
-    ronron += 0.3 * voix(np.full(nb(d), 48.0), [(400, 400, 1)], np.ones(nb(d)), pente=1.2,
-                         rugosite=0.3, fmax=2000)
-    morceaux.append((0.42, 0.8 * ronron))
+    t = temps(d)
+    battement = 0.25 + sum(np.where(t >= e - 0.42, np.exp(-(t - (e - 0.42)) / 0.06), 0)
+                           for e in explosions)
+    ronron = bruit_bande(nb(d), 300, 350) * 0.2
+    ronron += 0.25 * voix(np.full(nb(d), 48.0), [(450, 400, 1)], np.ones(nb(d)), pente=0.6,
+                          rugosite=0.3, fmax=2000)
+    morceaux.append((0.42, 0.5 * ronron * np.minimum(battement, 1.2) * np.minimum(t / 0.05, 1)))
     son = assembler(morceaux)
     fin = np.minimum((len(son) - np.arange(len(son))) / nb(0.25), 1)
     return son * fin
@@ -1058,12 +1065,13 @@ def fabriquer_tout():
     sonies = {cle: sonie(x) for cle, x in bruts.items()}
     # La cible : le niveau « du milieu ». Les sons plus forts sont baissés ;
     # les sons plus faibles (très « pointus ») sont montés en écrêtant
-    # doucement leurs pointes, au plus de 6 dB.
+    # doucement leurs pointes (au plus 9 dB ; en pratique seul le tracteur,
+    # fait de petites explosions, dépasse 6 dB).
     cible = np.median(list(sonies.values()))
     finis = {}
     for cle, x in bruts.items():
         gain_db = cible - sonies[cle]
-        gain_db = min(gain_db, 6.0)         # au plus 6 dB de limitation
+        gain_db = min(gain_db, 9.0)         # au plus 9 dB de limitation
         y = x * 10 ** (gain_db / 20)
         if np.abs(y).max() > CRETE:
             y = limiteur(y, CRETE)
