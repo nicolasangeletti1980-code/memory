@@ -34,7 +34,9 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 16px;
+      padding: 14px 16px;
+      user-select: none;
+      -webkit-user-select: none;
       -webkit-tap-highlight-color: transparent;
     }
 
@@ -43,7 +45,7 @@
       font-size: 1.8rem;
       text-align: center;
       line-height: 1.15;
-      margin: 8px 0 18px;
+      margin: 6px 0 14px;
       padding: 0 56px;   /* laisse la place au bouton de la musique */
     }
 
@@ -51,71 +53,56 @@
     .t-bleu   { color: #3aa0e8; }
     .t-violet { color: #9b6bff; }
 
-    /* ===== La liste des jeux ===== */
-    .jeux {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
+    /* ===== La grille des univers : 2 colonnes ===== */
+    .mondes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
       width: 100%;
       max-width: 460px;
     }
 
-    /* Une grosse tuile par jeu : on la touche pour lancer le jeu */
-    .jeu {
+    /* Une tuile par univers : on la touche pour lancer le jeu */
+    .monde {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 14px;
-      padding: 12px;
+      gap: 6px;
+      padding: 10px 8px 12px;
       border: 4px solid #fff;
       border-radius: 24px;
       text-decoration: none;
-      color: inherit;
-      box-shadow: 0 5px 14px rgba(155, 107, 255, 0.3);
+      box-shadow: 0 5px 14px rgba(155, 107, 255, 0.25);
     }
 
-    .jeu:active {
-      transform: scale(0.97);
+    .monde:active {
+      transform: scale(0.96);
     }
 
-    /* Chaque jeu a sa couleur */
-    .jeu-myrtille { background: linear-gradient(135deg, #ffe3f1, #efe4ff); }
-    .jeu-mer      { background: linear-gradient(135deg, #d6f7ff, #8fdcf7); color: #0b3d63; }
-    .jeu-dino     { background: linear-gradient(135deg, #f0ffd9, #c8f5a8); color: #23521a; }
-
-    /* Le dessin à gauche de la tuile */
-    .jeu svg {
-      flex: 0 0 84px;
-      width: 84px;
-      height: 84px;
+    /* Le personnage de l'univers, qui se dandine doucement */
+    .monde svg {
+      /* taille qui s'adapte à la largeur ET à la hauteur de l'écran */
+      width: min(26vw, 100px, 13vh);
+      height: min(26vw, 100px, 13vh);
       background: #fff;
-      border-radius: 18px;
+      border-radius: 20px;
       padding: 6px;
-      /* Le personnage se dandine doucement */
       animation: dandiner 1.6s ease-in-out infinite alternate;
     }
-
-    /* Chaque personnage bouge à son rythme */
-    .jeu-mer svg  { animation-delay: -0.5s; }
-    .jeu-dino svg { animation-delay: -1s; }
 
     @keyframes dandiner {
       from { transform: rotate(-5deg) translateY(0); }
       to   { transform: rotate(5deg) translateY(-4px); }
     }
 
-    .jeu strong {
-      display: block;
-      font-size: 1.35rem;
-    }
-
-    .jeu span {
-      font-size: 0.95rem;
-      opacity: 0.85;
+    .monde strong {
+      font-size: 1.15rem;
+      text-align: center;
     }
 
     /* ===== Installer l'appli ===== */
     .installer {
-      margin-top: 22px;
+      margin-top: 18px;
       text-align: center;
       max-width: 460px;
     }
@@ -141,6 +128,11 @@
       padding: 10px 14px;
     }
 
+    /* Ces éléments sont cachés tant que le JavaScript ne les montre pas */
+    .cache {
+      display: none;
+    }
+
     /* ===== Le bouton rond de la musique, en haut à droite ===== */
     .rond {
       position: fixed;
@@ -154,6 +146,7 @@
       font-size: 1.5rem;
       cursor: pointer;
       box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+      z-index: 5;
     }
 
     .rond.eteint {
@@ -183,12 +176,7 @@
 
     /* Si le téléphone demande moins d'animations, on les coupe */
     @media (prefers-reduced-motion: reduce) {
-      .jeu svg, .decor span { animation: none; }
-    }
-
-    /* Ces éléments sont cachés tant que le JavaScript ne les montre pas */
-    .cache {
-      display: none;
+      .monde svg, .decor span { animation: none; }
     }
   </style>
 </head>
@@ -206,21 +194,8 @@
     <span class="t-violet">Myrtille</span>
   </h1>
 
-  <!-- Les trois jeux -->
-  <nav class="jeux">
-    <a class="jeu jeu-myrtille" href="myrtille.html">
-      <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M54 24 Q62 6 82 8 Q76 26 54 24Z" fill="#7fd27f" stroke="#43a24e" stroke-width="2"/><circle cx="50" cy="57" r="33" fill="#5b6fd6" stroke="#3d4aa8" stroke-width="2.5"/><ellipse cx="34" cy="44" rx="6" ry="10" fill="#fff" opacity="0.35" transform="rotate(-25 34 44)"/><polygon points="50,16 52.4,21.8 58.6,22.2 53.8,26.2 55.3,32.3 50,29 44.7,32.3 46.2,26.2 41.4,22.2 47.6,21.8" fill="#2e3680"/><circle cx="40" cy="56" r="3.5" fill="#1d1f4a"/><circle cx="60" cy="56" r="3.5" fill="#1d1f4a"/><path d="M43 65 q7 6 14 0" stroke="#1d1f4a" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="33" cy="64" rx="5" ry="3" fill="#ff8fc0" opacity="0.6"/><ellipse cx="67" cy="64" rx="5" ry="3" fill="#ff8fc0" opacity="0.6"/></svg>
-      <div><strong>Myrtille</strong><span>Mimi, nounours, hovawart…</span></div>
-    </a>
-    <a class="jeu jeu-mer" href="mer.html">
-      <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M22 52 L6 37 Q11 52 6 67 Z" fill="#ff7a1a" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/><path d="M36 34 Q50 20 64 34 Z" fill="#ff7a1a" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/><path d="M42 70 Q50 82 58 70 Z" fill="#ff7a1a" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/><ellipse cx="48" cy="52" rx="30" ry="20" fill="#ff7a1a" stroke="#2b2b2b" stroke-width="2"/><ellipse cx="38" cy="52" rx="5" ry="18.5" fill="#fff" stroke="#2b2b2b" stroke-width="2"/><ellipse cx="59" cy="52" rx="4.5" ry="17.5" fill="#fff" stroke="#2b2b2b" stroke-width="2"/><circle cx="68" cy="47" r="5.5" fill="#fff" stroke="#1d2b4a" stroke-width="1.5"/><circle cx="69" cy="47" r="3.3" fill="#1d2b4a"/><circle cx="70.155" cy="45.845" r="1.1549999999999998" fill="#fff"/><path d="M69.5 58 q3.5 3.15 7 0" stroke="#1d2b4a" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
-      <div><strong>La Mer</strong><span>Poissons, sirène, trident…</span></div>
-    </a>
-    <a class="jeu jeu-dino" href="dino.html">
-      <svg viewBox="0 0 100 100" aria-hidden="true"><g fill="#3d8a2a" stroke="#3d8a2a" stroke-width="5" stroke-linejoin="round"><path d="M30 58 Q14 56 5 70 Q20 68 34 72 Z"/><ellipse cx="42" cy="60" rx="18" ry="16"/><path d="M35 70 h10 v17 h-13 Z"/><path d="M49 70 h10 v17 h-13 Z"/><ellipse cx="53" cy="45" rx="10" ry="12"/><ellipse cx="66" cy="33" rx="22" ry="14"/></g><g fill="#6cc24a"><path d="M30 58 Q14 56 5 70 Q20 68 34 72 Z"/><ellipse cx="42" cy="60" rx="18" ry="16"/><path d="M35 70 h10 v17 h-13 Z"/><path d="M49 70 h10 v17 h-13 Z"/><ellipse cx="53" cy="45" rx="10" ry="12"/><ellipse cx="66" cy="33" rx="22" ry="14"/></g><ellipse cx="47" cy="64" rx="9" ry="9" fill="#c8f08a"/><path d="M30 46 l3 -7 l4 6 M38 42 l4 -7 l3 7" fill="#ffb02e" stroke="#e07a10" stroke-width="1.5" stroke-linejoin="round"/><path d="M68 40 Q78 50 88 37 Z" fill="#b0233a"/><path d="M72 41 l2 4 l2 -4 Z M78 41 l2 4 l2 -4 Z M84 39 l1.5 3.5 l2 -4 Z" fill="#fff"/><path d="M58 53 q7 1 8 7" stroke="#3d8a2a" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="62" cy="28" r="4.5" fill="#1d2b1a"/><circle cx="63.575" cy="26.425" r="1.71" fill="#fff"/><circle cx="83" cy="30" r="1.5" fill="#1d2b1a"/><ellipse cx="70" cy="35" rx="4" ry="2.5" fill="#ff7fa0" opacity="0.6"/></svg>
-      <div><strong>Les Dinos</strong><span>T-rex, volcan, bébé dino…</span></div>
-    </a>
-  </nav>
+  <!-- Les univers (une tuile par univers, créées par le JavaScript) -->
+  <nav class="mondes" id="mondes"></nav>
 
   <!-- Installer le jeu comme une appli sur l'écran d'accueil -->
   <div class="installer">
@@ -233,10 +208,48 @@
     </p>
   </div>
 
-  <!-- La musique de fond, partagée par toutes les pages -->
+  <!-- La liste des univers, les outils de dessin et la musique -->
+  <script src="mondes/outils.js"></script>
   <script src="musique.js"></script>
   <script>
-    // ===== 1. Le mode appli : le jeu marche même sans internet =====
+    // ===== 1. Créer une tuile par univers =====
+    // On charge les fichiers des univers un par un (dans l'ordre de la liste),
+    // puis on fabrique les tuiles.
+    function chargerUnivers(numero) {
+      if (numero >= LISTE_MONDES.length) {
+        creerTuiles();
+        return;
+      }
+      const fichier = document.createElement("script");
+      fichier.src = "mondes/" + LISTE_MONDES[numero] + ".js";
+      fichier.onload = function () { chargerUnivers(numero + 1); };
+      fichier.onerror = function () { chargerUnivers(numero + 1); };  // on saute un fichier manquant
+      document.body.appendChild(fichier);
+    }
+
+    function creerTuiles() {
+      const liste = document.getElementById("mondes");
+      LISTE_MONDES.forEach(function (id, i) {
+        const monde = MONDES[id];
+        if (!monde) return;
+        const tuile = document.createElement("a");
+        tuile.className = "monde";
+        tuile.href = "jeu.html?monde=" + id;
+        tuile.style.background = monde.couleurs.fond;
+        tuile.style.color = monde.couleurs.texte;
+        // Le dessin du personnage de l'univers + son nom
+        const personnage = monde.cartes.find(function (c) { return c.id === monde.mascotte; });
+        tuile.innerHTML = personnage.dessin + "<strong>" + monde.nom + "</strong>";
+        tuile.setAttribute("aria-label", "Jouer : " + monde.nom);
+        // Chaque personnage se dandine à son rythme
+        tuile.querySelector("svg").style.animationDelay = -i * 0.4 + "s";
+        liste.appendChild(tuile);
+      });
+    }
+
+    chargerUnivers(0);
+
+    // ===== 2. Le mode appli : le jeu marche même sans internet =====
     // Le "service worker" est un petit programme qui garde une copie
     // des jeux dans le téléphone.
     if ("serviceWorker" in navigator) {
@@ -248,7 +261,7 @@
       window.matchMedia("(display-mode: standalone)").matches ||
       window.navigator.standalone === true;
 
-    // ===== 2. Le bouton "Installer" (Android, ordinateur avec Chrome/Edge) =====
+    // ===== 3. Le bouton "Installer" (Android, ordinateur avec Chrome/Edge) =====
     // Le navigateur prévient quand l'installation est possible :
     // on garde sa demande de côté et on affiche notre bouton.
     let demandeInstallation = null;
@@ -268,7 +281,7 @@
       }
     });
 
-    // ===== 3. L'aide pour iPhone / iPad =====
+    // ===== 4. L'aide pour iPhone / iPad =====
     // Sur iPhone, il n'y a pas de bouton automatique : on explique comment faire.
     const estIphone = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
       (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -276,8 +289,8 @@
       document.getElementById("aide-iphone").classList.remove("cache");
     }
 
-    // ===== 4. Le décor : des petits symboles des 3 jeux qui flottent =====
-    const symboles = ["💜", "🐠", "🦕", "⭐", "🐚", "🥚", "💖"];
+    // ===== 5. Le décor : des petits symboles des univers qui flottent =====
+    const symboles = ["💜", "🐠", "🦕", "🐮", "🦁", "🦊", "⭐", "💖"];
     const decor = document.getElementById("decor");
     for (let i = 0; i < 12; i++) {
       const element = document.createElement("span");
@@ -289,7 +302,7 @@
       decor.appendChild(element);
     }
 
-    // ===== 5. La petite musique : « Ah ! vous dirai-je, maman » =====
+    // ===== 6. La petite musique : « Ah ! vous dirai-je, maman » =====
     initMusique(MELODIES.vousDiraiJe, document.getElementById("bouton-musique"));
   </script>
 </body>

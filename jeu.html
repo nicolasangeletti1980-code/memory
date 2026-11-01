@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <!-- Cette ligne adapte la page à la largeur du téléphone (pas besoin de zoomer) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffc2e2" id="couleur-barre">
+  <title>Memory</title>
+
+  <!-- Pour installer le jeu comme une appli sur l'écran d'accueil -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icone-192.png">
+  <link rel="apple-touch-icon" href="icone-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Memory">
+
+  <style>
+    /* ===== Les couleurs du jeu =====
+       Elles sont remplacées par celles de l'univers choisi
+       (voir "couleurs" dans les fichiers du dossier mondes). */
+    :root {
+      --accent: #ff6fb5;
+      --accent-clair: #ffd6ec;
+      --principal: #9b6bff;
+      --texte: #5b3a8c;
+      --fond: #ffd6ec;
+      --dos: #ff9cd0;
+      --bouton: #ff6fb5;
+      --ombre: 155, 107, 255;
+      --voile: rgba(91, 58, 140, 0.45);
+      --blanc: #ffffff;
+    }
+
+    /* ===== Réglages généraux ===== */
+    * {
+      box-sizing: border-box;   /* les tailles incluent les bordures */
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      /* Police arrondie, plus douce pour les enfants */
+      font-family: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
+      background: var(--fond);
+      color: var(--texte);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* 100dvh = toute la hauteur visible de l'écran du téléphone */
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: 12px 16px;
+      overflow-x: hidden;
+      /* Empêche la sélection de texte et le zoom par double-tap */
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== Titre (chaque mot a sa couleur, donnée par l'univers) ===== */
+    h1 {
+      font-size: 1.7rem;
+      margin: 4px 0 10px;
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    /* ===== Compteur de coups et record ===== */
+    .infos {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      max-width: 520px;
+      margin-bottom: 12px;
+    }
+
+    .info {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.75);
+      border: 2px solid var(--blanc);
+      border-radius: 16px;
+      padding: 6px 4px;
+      text-align: center;
+      font-size: 0.85rem;
+      box-shadow: 0 3px 8px rgba(var(--ombre), 0.2);
+    }
+
+    .info strong {
+      display: block;
+      white-space: nowrap;
+      font-size: 1.3rem;
+      color: var(--accent);
+    }
+
+    /* ===== La grille de cartes : 4 x 4 ===== */
+    .plateau {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      /* La grille prend la plus petite de ces 3 tailles :
+         - la largeur de l'écran moins les marges
+         - la hauteur de l'écran moins la place du titre, des infos et des boutons
+         - 520 px maximum (pour les tablettes) */
+      width: min(100%, 100vh - 285px, 520px);  /* pour les vieux navigateurs */
+      width: min(100%, 100dvh - 285px, 520px);
+    }
+
+    /* ===== Une carte ===== */
+    .carte {
+      aspect-ratio: 1 / 1;      /* carte bien carrée */
+      perspective: 600px;       /* donne l'effet 3D au retournement */
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 0;
+    }
+
+    /* La carte s'enfonce un peu sous le doigt */
+    .carte:active {
+      transform: scale(0.94);
+    }
+
+    /* La partie qui tourne (elle contient le dos et la face) */
+    .carte-interieur {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.45s;
+      transform-style: preserve-3d;
+    }
+
+    /* Quand la carte a la classe "retournee", on la fait pivoter */
+    .carte.retournee .carte-interieur {
+      transform: rotateY(180deg);
+    }
+
+    /* Le dos et la face sont l'un sur l'autre */
+    .dos, .face {
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backface-visibility: hidden;          /* on ne voit pas l'arrière */
+      -webkit-backface-visibility: hidden;
+      border: 3px solid var(--blanc);
+      box-shadow: 0 4px 10px rgba(var(--ombre), 0.3);
+    }
+
+    /* Dos de la carte : dégradé de l'univers avec des petits pois */
+    .dos {
+      background-image:
+        radial-gradient(rgba(255, 255, 255, 0.3) 2px, transparent 2.5px),
+        var(--dos);
+      background-size: 14px 14px, 100% 100%;
+    }
+
+    /* Le dessin blanc au milieu du dos */
+    .dos svg {
+      width: 42%;
+      height: 42%;
+    }
+
+    /* Face de la carte (avec le dessin) */
+    .face {
+      transform: rotateY(180deg);
+      padding: 6%;
+    }
+
+    .face svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Carte trouvée : contour coloré et petit saut de joie */
+    .carte.trouvee .face {
+      border-color: var(--accent);
+      animation: saut 0.5s ease 0.45s;
+    }
+
+    /* À la victoire, toutes les cartes sautent l'une après l'autre */
+    .carte.trouvee.danse .face {
+      animation: saut 0.5s ease var(--retard) 2;
+    }
+
+    @keyframes saut {
+      0%, 100% { transform: rotateY(180deg) scale(1); }
+      50%      { transform: rotateY(180deg) scale(1.12); }
+    }
+
+    /* ===== Bouton Rejouer ===== */
+    .bouton {
+      margin-top: 14px;
+      font-family: inherit;
+      font-size: 1.15rem;
+      font-weight: bold;
+      padding: 12px 34px;
+      border: 3px solid var(--blanc);
+      border-radius: 30px;
+      background: var(--bouton);
+      color: var(--blanc);
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(var(--ombre), 0.4);
+    }
+
+    .bouton:active {
+      transform: scale(0.95);
+    }
+
+    /* ===== Les boutons ronds du bas : accueil, musique, bruitages ===== */
+    .barre {
+      display: flex;
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .rond {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 3px solid var(--blanc);
+      background: rgba(255, 255, 255, 0.8);
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .rond:active {
+      transform: scale(0.9);
+    }
+
+    /* Bouton éteint (musique ou bruitages coupés) : un peu transparent */
+    .rond.eteint {
+      opacity: 0.55;
+    }
+
+    /* ===== Fenêtre de victoire ===== */
+    .victoire {
+      position: fixed;
+      inset: 0;
+      background: var(--voile);
+      display: none;               /* cachée au départ */
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 10;
+    }
+
+    /* Quand elle a la classe "visible", on l'affiche */
+    .victoire.visible {
+      display: flex;
+    }
+
+    .victoire-boite {
+      background: var(--blanc);
+      border: 4px solid var(--accent-clair);
+      border-radius: 24px;
+      padding: 24px;
+      text-align: center;
+      width: 100%;
+      max-width: 340px;
+      animation: apparition 0.4s ease;
+    }
+
+    @keyframes apparition {
+      from { transform: scale(0.6); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    .victoire-boite h2 {
+      font-size: 1.7rem;
+      margin-bottom: 12px;
+      color: var(--accent);
+    }
+
+    .victoire-boite p {
+      margin: 6px 0;
+      font-size: 1.05rem;
+    }
+
+    .record {
+      color: var(--principal);
+      font-weight: bold;
+    }
+
+    /* Le personnage qui saute au-dessus du message de victoire */
+    .mascotte {
+      width: 130px;
+      height: 130px;
+      margin: -80px auto 0;
+      animation: bondir 0.45s ease-in-out infinite alternate;
+    }
+
+    .mascotte svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    @keyframes bondir {
+      from { transform: translateY(0) rotate(-4deg); }
+      to   { transform: translateY(-12px) rotate(4deg); }
+    }
+
+    /* Les cartes tremblent (pour le rugissement du T-rex) */
+    .secousse {
+      animation: secousse 0.1s linear 8;
+    }
+
+    @keyframes secousse {
+      0%, 100% { transform: translate(0, 0); }
+      25%      { transform: translate(-4px, 2px); }
+      75%      { transform: translate(4px, -2px); }
+    }
+
+    /* ===== Le décor qui flotte doucement derrière le jeu ===== */
+    .decor {
+      position: fixed;
+      inset: 0;
+      z-index: -1;            /* derrière tout le reste */
+      overflow: hidden;
+      pointer-events: none;   /* on ne peut pas le toucher */
+    }
+
+    .decor span {
+      position: absolute;
+      bottom: -60px;
+      opacity: 0.35;
+      animation: flotter linear infinite;
+    }
+
+    /* Une bulle dessinée (pour la mer) */
+    .decor .bulle-decor {
+      border: 3px solid #fff;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    @keyframes flotter {
+      from { transform: translateY(0) rotate(0deg); }
+      to   { transform: translateY(-115vh) rotate(25deg); }
+    }
+
+    /* ===== Confettis qui tombent à la victoire ===== */
+    .confetti {
+      position: fixed;
+      top: -40px;
+      font-size: 22px;
+      pointer-events: none;   /* on peut toucher "à travers" */
+      z-index: 20;
+      animation: chute linear forwards;
+    }
+
+    @keyframes chute {
+      to { transform: translateY(110vh) rotate(360deg); }
+    }
+
+    /* Si le téléphone demande moins d'animations, on les coupe */
+    @media (prefers-reduced-motion: reduce) {
+      .carte-interieur { transition: none; }
+      .carte.trouvee .face, .carte.trouvee.danse .face, .victoire-boite,
+      .mascotte, .secousse, .decor span { animation: none; }
+      .confetti { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Le décor animé (rempli par le JavaScript) -->
+  <div class="decor" id="decor" aria-hidden="true"></div>
+
+  <!-- Le titre (rempli par le JavaScript avec le nom de l'univers) -->
+  <h1 id="titre">Memory</h1>
+
+  <!-- Compteur de coups et meilleur score -->
+  <div class="infos">
+    <div class="info">Coups<strong id="coups">0</strong></div>
+    <div class="info">Record<strong id="record">–</strong></div>
+  </div>
+
+  <!-- Les cartes seront ajoutées ici par le JavaScript -->
+  <div class="plateau" id="plateau"></div>
+
+  <button class="bouton" id="rejouer">Rejouer</button>
+
+  <!-- Les boutons ronds : retour à l'accueil, musique, bruitages -->
+  <div class="barre">
+    <a class="rond" href="index.html" aria-label="Retour à l'accueil">🏠</a>
+    <button class="rond" id="bouton-musique" aria-label="Couper la musique">🎵</button>
+    <button class="rond" id="bouton-son" aria-label="Couper les bruitages">🔔</button>
+  </div>
+
+  <!-- Fenêtre qui s'affiche quand on a gagné -->
+  <div class="victoire" id="victoire">
+    <div class="victoire-boite">
+      <div class="mascotte" id="mascotte"></div>
+      <h2 id="titre-victoire">Bravo !</h2>
+      <p id="resultat"></p>
+      <p id="message-record"></p>
+      <button class="bouton" id="rejouer-victoire">Rejouer</button>
+    </div>
+  </div>
+
+  <!-- Les outils de dessin et la liste des univers -->
+  <script src="mondes/outils.js"></script>
+  <!-- La musique et les bruitages, partagés par tous les univers -->
+  <script src="musique.js"></script>
+  <script src="sons.js"></script>
+  <!-- Le moteur du jeu : il charge l'univers demandé puis lance la partie -->
+  <script src="jeu.js"></script>
+</body>
+</html>
