@@ -38,6 +38,17 @@ const MELODIES = {
       "re re re re la_bas:2 la_bas:2 re do si_bas la_bas sol_bas:4 " +
       "do do do re mi:2 re:2 do mi re re do:4 -:4"
   },
+  // « Dans la ferme de Mathurin » (air traditionnel de « Old MacDonald had a farm »)
+  // Notes relevées sur noobnotes.net (en sol), transposées ici en do.
+  fermeMathurin: {
+    tempo: 120,
+    notes:
+      "do do do sol_bas la_bas la_bas sol_bas:2 mi mi re re do:3 " +
+      "sol_bas do do do sol_bas la_bas la_bas sol_bas:2 mi mi re re do:3 " +
+      "sol_bas:0.5 sol_bas:0.5 do do do:2 sol_bas:0.5 sol_bas:0.5 do do do:2 " +
+      "do:0.5 do:0.5 do do:0.5 do:0.5 do do:0.5 do:0.5 do:0.5 do:0.5 do do " +
+      "do do do sol_bas la_bas la_bas sol_bas:2 mi mi re re do:4 -:4"
+  },
   // « Frère Jacques »
   frereJacques: {
     tempo: 120,
