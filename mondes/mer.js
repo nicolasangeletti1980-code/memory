@@ -112,10 +112,10 @@
         // La nageoire du dos
         avecContour('<path d="M26 36 Q46 22 70 32 L66 38 L28 42 Z"/>', "#2860e0", "#13235a") +
         // Le corps bleu, ovale et allongé
-        avecContour('<ellipse cx="50" cy="53" rx="34" ry="21"/>', "#2f6ff0", "#13235a") +
+        avecContour('<ellipse cx="50" cy="53" rx="34" ry="21"/>', "#3a7bff", "#13235a") +
         // La grande tache noire en forme de palette (avec son trou bleu)
-        '<path d="M58 36 Q40 30 24 40 Q18 46 22 52 Q30 52 32 60 Q34 68 28 72 Q42 72 46 60 Q48 50 60 46 Z" fill="#13235a"/>' +
-        '<ellipse cx="34" cy="47" rx="6" ry="4" fill="#2f6ff0"/>' +
+        '<path d="M60 38 Q44 32 29 39 Q20 45 24 53 Q28 59 23 66 Q35 67 37 58 Q39 50 50 48 Q57 46 61 44 Z" fill="#0b1026"/>' +
+        '<ellipse cx="35" cy="46" rx="5" ry="3.2" fill="#3a7bff"/>' +
         // La petite nageoire de côté, avec sa bande jaune
         '<path d="M52 64 Q56 76 66 72 Q62 66 58 62 Z" fill="#2860e0" stroke="#13235a" stroke-width="2" stroke-linejoin="round"/>' +
         '<path d="M57 70 Q61 73 65 71.5" stroke="#ffd23f" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
@@ -125,8 +125,8 @@
         '<circle cx="67.5" cy="45" r="6" fill="#9b6bd6"/><circle cx="83" cy="47" r="4.8" fill="#9b6bd6"/>' +
         oeil(68, 45.5, 3.5) + oeil(83.3, 47.3, 2.8) +
         // Le grand sourire joyeux, bouche ouverte
-        '<path d="M70 58 Q78 70 88 58 Q79 61 70 58 Z" fill="#7a1f3a" stroke="#13235a" stroke-width="1.8" stroke-linejoin="round"/>' +
-        '<path d="M74 62 Q79 66 84 61.5" stroke="#ff7fa0" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+        '<path d="M70 58 Q79 71 88 57 Q79 61 70 58 Z" fill="#7a1f3a" stroke="#13235a" stroke-width="1.8" stroke-linejoin="round"/>' +
+        '<path d="M75 63.5 Q79 61.5 83 63 Q79 66.5 75 63.5 Z" fill="#ff7fa0"/>' +
         joue(64, 60) +
         '</svg>'
     },
