@@ -14,7 +14,7 @@
   // - dessin : l'image SVG
   const CARTES = [
     {
-      id: "trex", nom: "Un T-rex", fond: "#e4ffd6",
+      id: "trex", nom: "Un T-rex", fond: "#ffe5d0",
       cri: { hauteur: 110, duree: 0.8 },
       dessin:
         '<svg viewBox="0 0 100 100">' +
@@ -42,7 +42,7 @@
         '</svg>'
     },
     {
-      id: "triceratops", nom: "Un tricératops", fond: "#fff0dc",
+      id: "triceratops", nom: "Un tricératops", fond: "#dcedff",
       cri: { hauteur: 170, duree: 0.5 },
       dessin:
         '<svg viewBox="0 0 100 100">' +
@@ -63,7 +63,7 @@
         '</svg>'
     },
     {
-      id: "diplodocus", nom: "Un diplodocus", fond: "#e0f0ff",
+      id: "diplodocus", nom: "Un diplodocus", fond: "#fff4c4",
       cri: { hauteur: 75, duree: 1 },
       dessin:
         '<svg viewBox="0 0 100 100">' +
@@ -84,7 +84,7 @@
         '</svg>'
     },
     {
-      id: "stegosaure", nom: "Un stégosaure", fond: "#f0e4ff",
+      id: "stegosaure", nom: "Un stégosaure", fond: "#def5d6",
       cri: { hauteur: 140, duree: 0.6 },
       dessin:
         '<svg viewBox="0 0 100 100">' +
@@ -104,7 +104,7 @@
         '</svg>'
     },
     {
-      id: "pteranodon", nom: "Un ptéranodon", fond: "#ffe3ea",
+      id: "pteranodon", nom: "Un ptéranodon", fond: "#d6f3ef",
       cri: { hauteur: 650, duree: 0.45 },
       dessin:
         '<svg viewBox="0 0 100 100">' +
@@ -128,7 +128,7 @@
         '</svg>'
     },
     {
-      id: "ankylosaure", nom: "Un ankylosaure", fond: "#fff6d6",
+      id: "ankylosaure", nom: "Un ankylosaure", fond: "#e8e2ff",
       cri: { hauteur: 120, duree: 0.55 },
       dessin:
         '<svg viewBox="0 0 100 100">' +
@@ -153,7 +153,7 @@
         '</svg>'
     },
     {
-      id: "bebe", nom: "Un bébé dinosaure dans son œuf", fond: "#e6ffe0",
+      id: "bebe", nom: "Un bébé dinosaure dans son œuf", fond: "#ffe0ee",
       cri: { hauteur: 520, duree: 0.3 },
       dessin:
         '<svg viewBox="0 0 100 100">' +
@@ -175,7 +175,7 @@
         '</svg>'
     },
     {
-      id: "volcan", nom: "Un volcan rigolo", fond: "#ffe6dc",
+      id: "volcan", nom: "Un volcan rigolo", fond: "#f3ddf3",
       cri: { hauteur: 50, duree: 1 },
       dessin:
         '<svg viewBox="0 0 100 100">' +

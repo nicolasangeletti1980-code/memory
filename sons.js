@@ -222,15 +222,44 @@ function prechargerSons(monde) {
   });
 }
 
-// Joue un fichier ; en cas de problème, joue le son de secours
+// Joue un fichier ; en cas de problème, joue le son de secours.
+// Si le fichier ne démarre pas au bout de 1,5 seconde (réseau bloqué...),
+// on joue aussi le son de secours, pour ne jamais rester dans le silence.
 function jouerFichier(fichier, sonDeSecours) {
   const lecteur = lecteurs[fichier];
+  let regle = false;   // devient vrai dès que l'on sait quel son est joué
+  function secours() {
+    if (regle) return;
+    regle = true;
+    lecteur.pause();
+    sonDeSecours();
+  }
   if (!lecteur || lecteur.error) {
     sonDeSecours();
     return;
   }
+  lecteur.addEventListener("playing", function () { regle = true; }, { once: true });
+  setTimeout(secours, 1500);
   lecteur.currentTime = 0;
-  lecteur.play().catch(sonDeSecours);
+  const lecture = lecteur.play();
+  if (lecture && lecture.catch) {
+    lecture.catch(secours);   // en cas d'échec : le son de secours
+  }
+}
+
+// Le son de secours, fabriqué par le navigateur (s'il en est capable)
+function secoursPaire(monde, carte) {
+  if (!preparerAudio()) return;
+  if (monde.sons === "bulles") bullesPaire();
+  else if (monde.sons === "rugissement") rugissementPaire(carte);
+  else clochettePaire();
+}
+
+function secoursVictoire(monde) {
+  if (!preparerAudio()) return;
+  if (monde.sons === "bulles") bullesVictoire();
+  else if (monde.sons === "rugissement") rugissementVictoire();
+  else clochetteVictoire();
 }
 
 // ===================================================================
@@ -239,22 +268,16 @@ function jouerFichier(fichier, sonDeSecours) {
 
 // Paire trouvée : le son de la carte
 function sonPaire(monde, carte) {
-  if (!sonActif || !preparerAudio()) return;
-  jouerFichier(fichierSon(monde, carte.id), function () {
-    if (monde.sons === "bulles") bullesPaire();
-    else if (monde.sons === "rugissement") rugissementPaire(carte);
-    else clochettePaire();
-  });
+  if (!sonActif) return;
+  preparerAudio();
+  jouerFichier(fichierSon(monde, carte.id), function () { secoursPaire(monde, carte); });
 }
 
 // Victoire
 function sonVictoire(monde) {
-  if (!sonActif || !preparerAudio()) return;
-  jouerFichier(fichierSon(monde, "victoire"), function () {
-    if (monde.sons === "bulles") bullesVictoire();
-    else if (monde.sons === "rugissement") rugissementVictoire();
-    else clochetteVictoire();
-  });
+  if (!sonActif) return;
+  preparerAudio();
+  jouerFichier(fichierSon(monde, "victoire"), function () { secoursVictoire(monde); });
 }
 
 // Le bouton 🔔 : couper ou remettre les bruitages
@@ -265,7 +288,8 @@ function brancherBoutonSon(bouton) {
     bouton.classList.toggle("eteint", !sonActif);
   }
   afficher();
-  bouton.addEventListener("click", function () {
+  // Couper ou remettre les bruitages : il faut un appui long (voir appui.js)
+  appuiLong(bouton, function () {
     sonActif = !sonActif;
     try {
       localStorage.setItem(CLE_SON, sonActif ? "oui" : "non");

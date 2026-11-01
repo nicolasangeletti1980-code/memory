@@ -11,7 +11,7 @@
   // - dessin : l'image SVG
   const CARTES = [
     {
-      id: "hippocampe", nom: "Un hippocampe", fond: "#fff3d6",
+      id: "hippocampe", nom: "Un hippocampe", fond: "#d6f3ef",
       dessin:
         '<svg viewBox="0 0 100 100">' +
         // La queue enroulée (un gros trait foncé, puis un trait clair dessus)
@@ -37,7 +37,7 @@
         '</svg>'
     },
     {
-      id: "clown", nom: "Un poisson clown", fond: "#ffe8dc",
+      id: "clown", nom: "Un poisson clown", fond: "#dcedff",
       dessin:
         '<svg viewBox="0 0 100 100">' +
         // La queue et les nageoires (orange bordé de noir)
@@ -60,7 +60,7 @@
         '</svg>'
     },
     {
-      id: "etoile", nom: "Une étoile de mer", fond: "#ffe3ea",
+      id: "etoile", nom: "Une étoile de mer", fond: "#fff4c4",
       dessin:
         '<svg viewBox="0 0 100 100">' +
         // Une étoile à 5 branches aux bouts arrondis
@@ -79,7 +79,7 @@
         '</svg>'
     },
     {
-      id: "saint-jacques", nom: "Une coquille Saint-Jacques", fond: "#fff6dc",
+      id: "saint-jacques", nom: "Une coquille Saint-Jacques", fond: "#e8e2ff",
       dessin:
         '<svg viewBox="0 0 100 100">' +
         avecContour(
@@ -101,7 +101,7 @@
         '</svg>'
     },
     {
-      id: "chirurgien", nom: "Dory, le poisson bleu", fond: "#e0f0ff",
+      id: "chirurgien", nom: "Dory, le poisson bleu", fond: "#ffe5d0",
       dessin:
         // Un poisson chirurgien bleu un peu étourdi, comme Dory :
         // corps ovale et allongé, grande tache noire en forme de palette,
@@ -131,7 +131,7 @@
         '</svg>'
     },
     {
-      id: "sirene", nom: "Une sirène", fond: "#f0e4ff",
+      id: "sirene", nom: "Une sirène", fond: "#ffe0ee",
       dessin:
         '<svg viewBox="0 0 100 100">' +
         // Les longs cheveux roux (derrière la tête et le dos)
@@ -160,7 +160,7 @@
         '</svg>'
     },
     {
-      id: "jaune", nom: "Polochon, le poisson jaune", fond: "#fff9d6",
+      id: "jaune", nom: "Polochon, le poisson jaune", fond: "#def5d6",
       dessin:
         // Un poisson tropical jaune tout rond, comme Polochon :
         // corps dodu comme un ballon, larges bandes bleues,
@@ -189,7 +189,7 @@
         '</svg>'
     },
     {
-      id: "trident", nom: "Le trident de Poséidon", fond: "#e3f6ff",
+      id: "trident", nom: "Le trident de Poséidon", fond: "#f3ddf3",
       dessin:
         '<svg viewBox="0 0 100 100">' +
         // Le trident est dessiné 2 fois : en foncé (contour) puis en doré

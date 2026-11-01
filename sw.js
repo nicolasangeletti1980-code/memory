@@ -5,7 +5,7 @@
 
 // Le nom de la copie. Si on change les jeux, on change ce numéro
 // pour forcer une copie toute neuve.
-const NOM_COPIE = "memory-myrtille-v4";
+const NOM_COPIE = "memory-myrtille-v5";
 
 // On lit la liste des univers et leurs cartes,
 // pour savoir quels fichiers (pages, dessins, sons) garder.
@@ -26,6 +26,7 @@ const FICHIERS = [
   "./jeu.js",
   "./sons.js",
   "./musique.js",
+  "./appui.js",
   "./mondes/outils.js",
   // Les anciennes adresses (favoris, raccourcis) : elles doivent marcher sans internet
   "./myrtille.html",
@@ -52,7 +53,8 @@ self.addEventListener("install", function (evenement) {
   evenement.waitUntil(
     caches.open(NOM_COPIE).then(function (copie) {
       return Promise.all(FICHIERS.map(function (fichier) {
-        return copie.add(fichier).catch(function () {});
+        // cache: "reload" = on prend bien la version toute fraîche en ligne
+        return copie.add(new Request(fichier, { cache: "reload" })).catch(function () {});
       }));
     })
   );
@@ -132,7 +134,15 @@ self.addEventListener("fetch", function (evenement) {
         return reponse;
       })
       .catch(function () {
-        return caches.match(demande);
+        // Sans internet : la copie. Pour jeu.html, la page est la même
+        // quel que soit l'univers demandé, on ignore donc ce qui suit le "?".
+        return caches.match(demande).then(function (copie) {
+          if (copie) return copie;
+          if (new URL(demande.url).pathname.endsWith("/jeu.html")) {
+            return caches.match("./jeu.html", { ignoreSearch: true });
+          }
+          return copie;
+        });
       })
   );
 });

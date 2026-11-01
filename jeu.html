@@ -2,8 +2,10 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <!-- Cette ligne adapte la page à la largeur du téléphone (pas besoin de zoomer) -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Cette ligne adapte la page à la largeur du téléphone (pas besoin de zoomer).
+       On interdit aussi le zoom à deux doigts : une paume posée sur l'écran
+       ne doit pas agrandir la page. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#ffc2e2" id="couleur-barre">
   <title>Memory</title>
 
@@ -71,44 +73,65 @@
       line-height: 1.1;
     }
 
-    /* ===== Compteur de coups et record ===== */
-    .infos {
+    /* ===== La barre de progression : une case par paire ===== */
+    .progression {
       display: flex;
-      gap: 10px;
+      justify-content: center;
+      gap: 6px;
       width: 100%;
       max-width: 520px;
       margin-bottom: 12px;
+      touch-action: none;
     }
 
-    .info {
-      flex: 1;
-      background: rgba(255, 255, 255, 0.75);
+    .case {
+      flex: 0 1 44px;
+      aspect-ratio: 1 / 1;
+      border-radius: 10px;
+      border: 2px dashed rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.4);
+      padding: 2px;
+    }
+
+    .case svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Une case remplie : le dessin de la paire arrive avec un petit "pop" */
+    .case.remplie {
       border: 2px solid var(--blanc);
-      border-radius: 16px;
-      padding: 6px 4px;
-      text-align: center;
-      font-size: 0.85rem;
-      box-shadow: 0 3px 8px rgba(var(--ombre), 0.2);
+      box-shadow: 0 2px 6px rgba(var(--ombre), 0.3);
+      animation: pop 0.4s ease;
     }
 
-    .info strong {
-      display: block;
-      white-space: nowrap;
-      font-size: 1.3rem;
-      color: var(--accent);
+    @keyframes pop {
+      0%   { transform: scale(0.3); }
+      70%  { transform: scale(1.2); }
+      100% { transform: scale(1); }
     }
 
-    /* ===== La grille de cartes : 4 x 4 ===== */
+    /* ===== La grille de cartes : 4 x 4 (papillon) ===== */
     .plateau {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 10px;
       /* La grille prend la plus petite de ces 3 tailles :
          - la largeur de l'écran moins les marges
-         - la hauteur de l'écran moins la place du titre, des infos et des boutons
+         - la hauteur de l'écran moins la place du titre, de la progression
+           et des boutons du bas
          - 520 px maximum (pour les tablettes) */
-      width: min(100%, 100vh - 285px, 520px);  /* pour les vieux navigateurs */
-      width: min(100%, 100dvh - 285px, 520px);
+      width: min(100%, 100vh - 250px, 520px);  /* pour les vieux navigateurs */
+      width: min(100%, 100dvh - 250px, 520px);
+      /* Un doigt qui glisse sur les cartes ne fait ni défiler ni zoomer */
+      touch-action: none;
+    }
+
+    /* Mode chenille : 3 x 4 grandes cartes (le plateau est plus haut que large) */
+    .plateau.chenille {
+      grid-template-columns: repeat(3, 1fr);
+      width: min(100%, (100vh - 250px) * 0.75, 420px);
+      width: min(100%, (100dvh - 250px) * 0.75, 420px);
     }
 
     /* ===== Une carte ===== */
@@ -124,6 +147,17 @@
     /* La carte s'enfonce un peu sous le doigt */
     .carte:active {
       transform: scale(0.94);
+    }
+
+    /* L'indice : la carte tremble doucement */
+    .carte.indice {
+      animation: indice 0.6s ease-in-out 2;
+    }
+
+    @keyframes indice {
+      0%, 100% { transform: rotate(0deg); }
+      25%      { transform: rotate(-7deg) scale(1.05); }
+      75%      { transform: rotate(7deg) scale(1.05); }
     }
 
     /* La partie qui tourne (elle contient le dos et la face) */
@@ -195,9 +229,8 @@
       50%      { transform: rotateY(180deg) scale(1.12); }
     }
 
-    /* ===== Bouton Rejouer ===== */
+    /* ===== Bouton Rejouer (dans la fenêtre de victoire) ===== */
     .bouton {
-      margin-top: 14px;
       font-family: inherit;
       font-size: 1.15rem;
       font-weight: bold;
@@ -214,11 +247,24 @@
       transform: scale(0.95);
     }
 
+    /* Le bouton n'est pas encore actif : il est pâle et ne réagit pas */
+    .bouton.pas-encore {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .bouton {
+      transition: opacity 0.4s;
+    }
+
     /* ===== Les boutons ronds du bas : accueil, musique, bruitages ===== */
     .barre {
       display: flex;
-      gap: 14px;
-      margin-top: 12px;
+      gap: 22px;
+      /* La barre est poussée tout en bas de l'écran, loin des cartes */
+      margin-top: auto;
+      padding-top: 40px;
+      touch-action: none;
     }
 
     .rond {
@@ -245,15 +291,60 @@
       opacity: 0.55;
     }
 
+    /* L'anneau qui se remplit pendant l'appui long (voir appui.js) */
+    @property --remplissage {
+      syntax: "<percentage>";
+      inherits: false;
+      initial-value: 0%;
+    }
+
+    .rond {
+      position: relative;
+      -webkit-touch-callout: none;   /* pas de menu du téléphone */
+    }
+
+    .rond::after {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      background: conic-gradient(var(--accent) var(--remplissage), transparent 0);
+      -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+      mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .rond.appui::after {
+      opacity: 1;
+      animation: remplir 1s linear forwards;
+    }
+
+    @keyframes remplir {
+      from { --remplissage: 0%; }
+      to   { --remplissage: 100%; }
+    }
+
+    /* Un toucher trop court : le bouton se secoue un peu */
+    .rond.refus {
+      animation: refus 0.4s ease;
+    }
+
+    @keyframes refus {
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
     /* ===== Fenêtre de victoire ===== */
     .victoire {
       position: fixed;
       inset: 0;
       background: var(--voile);
       display: none;               /* cachée au départ */
-      align-items: center;
+      /* La fenêtre est placée vers le bas de l'écran */
+      align-items: flex-end;
       justify-content: center;
-      padding: 16px;
+      padding: 16px 16px max(24px, 7vh);
       z-index: 10;
     }
 
@@ -284,9 +375,20 @@
       color: var(--accent);
     }
 
+    /* Les chiffres sont pour les parents : en petit */
     .victoire-boite p {
-      margin: 6px 0;
-      font-size: 1.05rem;
+      margin: 4px 0;
+      font-size: 0.9rem;
+      opacity: 0.85;
+    }
+
+    /* La ligne du bas : 🏠 et Rejouer, bien espacés */
+    .victoire-boutons {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      margin-top: 18px;
     }
 
     .record {
@@ -299,7 +401,8 @@
       width: 130px;
       height: 130px;
       margin: -80px auto 0;
-      animation: bondir 0.45s ease-in-out infinite alternate;
+      /* Il bondit 4 fois (environ 3 secondes), puis il se pose */
+      animation: bondir 0.8s ease-in-out 4 alternate;
     }
 
     .mascotte svg {
@@ -369,7 +472,7 @@
     @media (prefers-reduced-motion: reduce) {
       .carte-interieur { transition: none; }
       .carte.trouvee .face, .carte.trouvee.danse .face, .victoire-boite,
-      .mascotte, .secousse, .decor span { animation: none; }
+      .mascotte, .secousse, .decor span, .case.remplie, .carte.indice { animation: none; }
       .confetti { display: none; }
     }
   </style>
@@ -382,38 +485,40 @@
   <!-- Le titre (rempli par le JavaScript avec le nom de l'univers) -->
   <h1 id="titre">Memory</h1>
 
-  <!-- Compteur de coups et meilleur score -->
-  <div class="infos">
-    <div class="info">Coups<strong id="coups">0</strong></div>
-    <div class="info">Record<strong id="record">–</strong></div>
-  </div>
+  <!-- La barre de progression : une case par paire, remplie du dessin
+       de chaque paire trouvée (pas de chiffres : elle ne lit pas encore) -->
+  <div class="progression" id="progression" aria-hidden="true"></div>
 
   <!-- Les cartes seront ajoutées ici par le JavaScript -->
   <div class="plateau" id="plateau"></div>
 
-  <button class="bouton" id="rejouer">Rejouer</button>
-
-  <!-- Les boutons ronds : retour à l'accueil, musique, bruitages -->
+  <!-- Les boutons ronds, tout en bas : accueil, musique, bruitages.
+       Il faut appuyer 1 seconde dessus (verrou parent, voir appui.js) -->
   <div class="barre">
-    <a class="rond" href="index.html" aria-label="Retour à l'accueil">🏠</a>
+    <a class="rond accueil" href="index.html" aria-label="Retour à l'accueil (appui long)">🏠</a>
     <button class="rond" id="bouton-musique" aria-label="Couper la musique">🎵</button>
     <button class="rond" id="bouton-son" aria-label="Couper les bruitages">🔔</button>
   </div>
 
   <!-- Fenêtre qui s'affiche quand on a gagné -->
   <div class="victoire" id="victoire">
-    <div class="victoire-boite">
+    <div class="victoire-boite" role="dialog" aria-modal="true" aria-labelledby="titre-victoire">
       <div class="mascotte" id="mascotte"></div>
       <h2 id="titre-victoire">Bravo !</h2>
       <p id="resultat"></p>
       <p id="message-record"></p>
-      <button class="bouton" id="rejouer-victoire">Rejouer</button>
+      <div class="victoire-boutons">
+        <a class="rond accueil" href="index.html" aria-label="Retour à l'accueil (appui long)">🏠</a>
+        <button class="bouton" id="rejouer-victoire">Rejouer</button>
+      </div>
     </div>
   </div>
 
   <!-- Les outils de dessin et la liste des univers -->
   <script src="mondes/outils.js"></script>
-  <!-- La musique et les bruitages, partagés par tous les univers -->
+  <!-- L'appui long (verrou parent), la musique et les bruitages,
+       partagés par tous les univers -->
+  <script src="appui.js"></script>
   <script src="musique.js"></script>
   <script src="sons.js"></script>
   <!-- Le moteur du jeu : il charge l'univers demandé puis lance la partie -->

@@ -62,7 +62,7 @@
   // - dessin : l'image SVG (une boîte de 100 x 100)
   const CARTES = [
     {
-      id: "myrtille", nom: "Une myrtille", fond: "#e6ebff",
+      id: "myrtille", nom: "Une myrtille", fond: "#ffe5d0",
       dessin:
         '<svg viewBox="0 0 100 100">' +
         // La feuille (dessinée en premier pour être derrière), avec sa nervure
@@ -81,7 +81,7 @@
         '</svg>'
     },
     {
-      id: "lettre-m", nom: "La lettre M", fond: "#ffe3f1",
+      id: "lettre-m", nom: "La lettre M", fond: "#d6f3ef",
       dessin:
         '<svg viewBox="0 0 100 100">' +
         texteAutocollant("M", 76, 72, "#ff5fa8", "#c23f86", 0, 0.2) +
@@ -94,21 +94,22 @@
         '</svg>'
     },
     {
-      id: "prenom", nom: "Le prénom Myrtille", fond: "#efe4ff",
+      id: "prenom", nom: "Le prénom Myrtille", fond: "#fff4c4",
       dessin:
         '<svg viewBox="0 0 100 100">' +
         // Un cœur rose au-dessus du prénom
-        coeur(50, 20, 12, "#ff6fb5", "#c23f86") +
-        '<ellipse cx="42" cy="24" rx="2.5" ry="4" fill="#fff" opacity="0.6" transform="rotate(-30 42 24)"/>' +
+        coeur(50, 14, 11, "#ff6fb5", "#c23f86") +
+        '<ellipse cx="42.5" cy="18" rx="2.3" ry="3.6" fill="#fff" opacity="0.6" transform="rotate(-30 42.5 18)"/>' +
+        // Le prénom en grand (lettres 30 % plus hautes qu'avant) ;
         // textLength (la largeur imposée) oblige le mot à tenir dans la carte
-        texteAutocollant("Myrtille", 69, 30, "#8a4fd8", "#5a2f9e", 86, 0.13) +
-        etincelle(16, 86, 5.5, "#3aa0e8") +
-        etincelle(84, 86, 5.5, "#ff6fb5") +
-        etincelle(50, 88, 4, "#9b6bff") +
+        texteAutocollant("Myrtille", 72, 39, "#8a4fd8", "#5a2f9e", 92, 0.12) +
+        etincelle(14, 89, 5, "#3aa0e8") +
+        etincelle(86, 89, 5, "#ff6fb5") +
+        etincelle(50, 91, 4, "#9b6bff") +
         '</svg>'
     },
     {
-      id: "surnom", nom: "Le surnom Mimi", fond: "#e0f2ff",
+      id: "surnom", nom: "Le surnom Mimi", fond: "#def5d6",
       dessin:
         '<svg viewBox="0 0 100 100">' +
         texteAutocollant("Mimi", 66, 38, "#3aa0e8", "#1d64a8", 74, 0.18) +
@@ -120,7 +121,7 @@
         '</svg>'
     },
     {
-      id: "hovawart", nom: "Un chien hovawart", fond: "#fff0dc",
+      id: "hovawart", nom: "Un chien hovawart", fond: "#dcedff",
       dessin:
         // Un hovawart « noir marqué de feu », dessiné d'après le standard
         // officiel de la race (FCI n° 190) :
@@ -181,7 +182,7 @@
         '</svg>'
     },
     {
-      id: "trottinette", nom: "Une trottinette violette", fond: "#e3f3ff",
+      id: "trottinette", nom: "Une trottinette violette", fond: "#ffe0ee",
       dessin:
         '<svg viewBox="0 0 100 100">' +
         // Les rubans roses qui flottent au guidon
@@ -212,11 +213,11 @@
         '</svg>'
     },
     {
-      id: "ours-blanc", nom: "Le doudou nounours blanc", fond: "#ffe9f3",
+      id: "ours-blanc", nom: "Le doudou nounours blanc", fond: "#e8e2ff",
       dessin: dessinOurs("#fffdf8", "#bfae9c", "#f3e8dc")
     },
     {
-      id: "ours-marron", nom: "Le doudou nounours marron", fond: "#fff1de",
+      id: "ours-marron", nom: "Le doudou nounours marron", fond: "#f3ddf3",
       dessin: dessinOurs("#b5804f", "#6e4526", "#ebcba5")
     }
   ];

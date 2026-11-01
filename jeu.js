@@ -16,27 +16,49 @@ fichierMonde.src = "mondes/" + ID_MONDE + ".js";
 fichierMonde.onload = function () {
   lancerJeu(MONDES[ID_MONDE]);
 };
+// Si le fichier ne se charge pas, on retourne à l'accueil
+fichierMonde.onerror = function () {
+  location.replace("index.html");
+};
 document.body.appendChild(fichierMonde);
 
-// ===== 2. Les éléments de la page =====
+// ===== 2. Les réglages du jeu =====
+const DELAI_MAUVAISE_PAIRE = 1300;  // temps pour regarder une mauvaise paire (1,3 s)
+const ERREURS_AVANT_INDICE = 4;     // après 4 erreurs de suite : un petit indice
+const DELAI_FENETRE_VICTOIRE = 2500; // on laisse les cartes danser avant la fenêtre
+const DELAI_BOUTON_VICTOIRE = 1500;  // le bouton Rejouer s'allume un peu après
+
+// La taille de partie, choisie sur l'accueil :
+// "chenille" = 6 paires (12 grandes cartes), "papillon" = 8 paires (16 cartes)
+const CLE_TAILLE = "memory-taille";
+let taille = "papillon";
+try {
+  if (localStorage.getItem(CLE_TAILLE) === "chenille") taille = "chenille";
+} catch (e) {}
+const NOMBRE_PAIRES = taille === "chenille" ? 6 : 8;
+
+// ===== 3. Les éléments de la page =====
 const plateau = document.getElementById("plateau");
-const affichageCoups = document.getElementById("coups");
-const affichageRecord = document.getElementById("record");
+const progression = document.getElementById("progression");
 const fenetreVictoire = document.getElementById("victoire");
+const boutonRejouer = document.getElementById("rejouer-victoire");
 const texteResultat = document.getElementById("resultat");
 const texteRecord = document.getElementById("message-record");
 
-// ===== 3. Les variables qui changent pendant la partie =====
-let monde = null;           // l'univers en cours
-let premiereCarte = null;   // la 1re carte retournée
-let deuxiemeCarte = null;   // la 2e carte retournée
-let bloque = false;         // true = on attend, on ne peut pas toucher
-let coups = 0;              // nombre de coups joués
-let pairesTrouvees = 0;     // nombre de paires trouvées
-let attente = null;         // le délai en cours (retournement ou victoire)
+// ===== 4. Les variables qui changent pendant la partie =====
+let monde = null;            // l'univers en cours
+let cartesPartie = [];       // les cartes (modèles) de la partie en cours
+let premiereCarte = null;    // la 1re carte retournée
+let deuxiemeCarte = null;    // la 2e carte retournée
+let bloque = false;          // true = une mauvaise paire est montrée
+let coups = 0;               // nombre de coups joués
+let pairesTrouvees = 0;      // nombre de paires trouvées
+let erreursDeSuite = 0;      // mauvaises paires d'affilée (pour l'indice)
+let attente = null;          // le délai de la mauvaise paire
+let attentesVictoire = [];   // les délais de la fin de partie
 
 // ===================================================================
-// 4. Habiller la page aux couleurs de l'univers
+// 5. Habiller la page aux couleurs de l'univers
 // ===================================================================
 function appliquerTheme() {
   const c = monde.couleurs;
@@ -63,10 +85,13 @@ function appliquerTheme() {
   });
   document.title = monde.titre.map(function (mot) { return mot[0]; }).join(" ");
   document.getElementById("titre-victoire").textContent = monde.titreVictoire;
+
+  // En mode chenille, le plateau a 3 colonnes de grandes cartes
+  plateau.classList.toggle("chenille", taille === "chenille");
 }
 
 // ===================================================================
-// 5. Mélanger un tableau (méthode de Fisher-Yates)
+// 6. Mélanger un tableau (méthode de Fisher-Yates)
 // On parcourt le tableau de la fin vers le début
 // et on échange chaque case avec une case au hasard avant elle.
 // ===================================================================
@@ -79,13 +104,13 @@ function melanger(tableau) {
 }
 
 // ===================================================================
-// 6. Le record : le moins de coups pour finir.
+// 7. Le record : le moins de coups pour finir.
 // Il est rangé dans la mémoire du téléphone ("localStorage"),
-// un record par univers. try/catch évite que le jeu plante
-// si cette mémoire est bloquée.
+// un record par univers et par taille de partie.
+// try/catch évite que le jeu plante si cette mémoire est bloquée.
 // ===================================================================
 function cleRecord() {
-  return "memory-record-" + monde.id;
+  return "memory-record-" + monde.id + (taille === "chenille" ? "-chenille" : "");
 }
 
 function lireRecord() {
@@ -94,10 +119,12 @@ function lireRecord() {
     if (texte) {
       return parseInt(texte, 10);
     }
-    // Pas encore de record : on reprend celui de l'ancienne version du jeu
-    const ancien = JSON.parse(localStorage.getItem(monde.ancienneCleRecord));
-    if (ancien && ancien.coups > 0) {
-      return ancien.coups;
+    // Pas encore de record (papillon) : on reprend celui de l'ancienne version
+    if (taille === "papillon" && monde.ancienneCleRecord) {
+      const ancien = JSON.parse(localStorage.getItem(monde.ancienneCleRecord));
+      if (ancien && ancien.coups > 0) {
+        return ancien.coups;
+      }
     }
   } catch (e) {}
   return null;
@@ -111,32 +138,52 @@ function sauverRecord(nombre) {
   }
 }
 
-function afficherRecord() {
-  const record = lireRecord();
-  affichageRecord.textContent = record ? record + " coups" : "–";
+// ===================================================================
+// 8. La barre de progression : une case par paire,
+// qui se remplit du dessin de la paire trouvée
+// ===================================================================
+function preparerProgression() {
+  progression.innerHTML = "";
+  for (let i = 0; i < NOMBRE_PAIRES; i++) {
+    const caseVide = document.createElement("div");
+    caseVide.className = "case";
+    progression.appendChild(caseVide);
+  }
+}
+
+function remplirProgression(modele) {
+  const caseLibre = progression.querySelector(".case:not(.remplie)");
+  if (!caseLibre) return;
+  caseLibre.innerHTML = modele.dessin;
+  caseLibre.style.background = modele.fond;
+  caseLibre.classList.add("remplie");
 }
 
 // ===================================================================
-// 7. Créer une nouvelle partie
+// 9. Créer une nouvelle partie
 // ===================================================================
 function nouvellePartie() {
   // On remet tout à zéro
   clearTimeout(attente);    // annule un retournement encore en attente
+  attentesVictoire.forEach(clearTimeout);
+  attentesVictoire = [];
   premiereCarte = null;
   deuxiemeCarte = null;
   bloque = false;
   coups = 0;
   pairesTrouvees = 0;
-  affichageCoups.textContent = "0";
-  fenetreVictoire.classList.remove("visible");
+  erreursDeSuite = 0;
+  fermerFenetreVictoire();
   // On enlève les confettis qui tomberaient encore
   document.querySelectorAll(".confetti").forEach(function (c) { c.remove(); });
-  afficherRecord();
+  preparerProgression();
 
-  // Les 8 cartes de l'univers, en double (pour faire les paires), mélangées
-  const paquet = melanger([...monde.cartes, ...monde.cartes]);
+  // On tire au hasard les dessins de la partie (6 sur 8 en mode chenille),
+  // on les met en double (pour faire les paires) et on mélange
+  cartesPartie = melanger([...monde.cartes]).slice(0, NOMBRE_PAIRES);
+  const paquet = melanger([...cartesPartie, ...cartesPartie]);
 
-  // On vide le plateau puis on crée les 16 cartes
+  // On vide le plateau puis on crée les cartes
   plateau.innerHTML = "";
   paquet.forEach(function (modele) {
     const carte = document.createElement("button");
@@ -157,13 +204,22 @@ function nouvellePartie() {
 }
 
 // ===================================================================
-// 8. Quand on touche une carte
+// 10. Quand on touche une carte
 // ===================================================================
 function toucherCarte(carte) {
-  // On ignore le toucher si :
-  // - on attend que deux cartes se retournent
-  // - la carte est déjà retournée ou déjà trouvée
-  if (bloque || carte.classList.contains("retournee")) {
+  // Une mauvaise paire est encore montrée ? Toucher fait continuer
+  // tout de suite : les deux cartes se recachent.
+  if (bloque) {
+    const etaitMontree = carte === premiereCarte || carte === deuxiemeCarte;
+    clearTimeout(attente);
+    cacherMauvaisePaire();
+    if (etaitMontree) {
+      return;   // elle a touché une des deux cartes : on s'arrête là
+    }
+  }
+
+  // On ignore une carte déjà retournée ou déjà trouvée
+  if (carte.classList.contains("retournee")) {
     return;
   }
 
@@ -174,6 +230,7 @@ function toucherCarte(carte) {
 
   // On retourne la carte (le CSS fait l'animation)
   carte.classList.add("retournee");
+  carte.classList.add("vue");   // on retient qu'elle a été vue (pour l'indice)
   carte.setAttribute("aria-label", carte.dataset.nom);
 
   if (premiereCarte === null) {
@@ -185,43 +242,75 @@ function toucherCarte(carte) {
   // C'est la 2e carte : un coup est terminé
   deuxiemeCarte = carte;
   coups++;
-  affichageCoups.textContent = coups;
 
   if (premiereCarte.dataset.id === deuxiemeCarte.dataset.id) {
     // Les deux cartes sont identiques : elles restent visibles
     premiereCarte.classList.add("trouvee");
     deuxiemeCarte.classList.add("trouvee");
     pairesTrouvees++;
+    erreursDeSuite = 0;
     premiereCarte = null;
     deuxiemeCarte = null;
 
+    const modele = cartesPartie.find(function (c) { return c.id === carte.dataset.id; });
+    remplirProgression(modele);
+
     // Toutes les paires trouvées ? C'est gagné !
-    if (pairesTrouvees === monde.cartes.length) {
-      sonVictoire(monde);
+    if (pairesTrouvees === NOMBRE_PAIRES) {
       victoire();
+      sonVictoire(monde);
     } else {
       // Le son de la carte trouvée (son cri, sa clochette...)
-      const modele = monde.cartes.find(function (c) { return c.id === carte.dataset.id; });
       sonPaire(monde, modele);
     }
   } else {
-    // Pas identiques : on bloque, puis on les retourne après 1 seconde.
+    // Pas identiques : on les laisse visibles 1,3 seconde, puis on les recache.
     // Aucun son : on ne veut jamais décourager.
+    erreursDeSuite++;
     bloque = true;
-    attente = setTimeout(function () {
-      premiereCarte.classList.remove("retournee");
-      deuxiemeCarte.classList.remove("retournee");
-      premiereCarte.setAttribute("aria-label", "Carte cachée");
-      deuxiemeCarte.setAttribute("aria-label", "Carte cachée");
-      premiereCarte = null;
-      deuxiemeCarte = null;
-      bloque = false;
-    }, 1000);
+    attente = setTimeout(cacherMauvaisePaire, DELAI_MAUVAISE_PAIRE);
+  }
+}
+
+// On recache les deux cartes d'une mauvaise paire
+function cacherMauvaisePaire() {
+  if (!bloque) return;
+  [premiereCarte, deuxiemeCarte].forEach(function (carte) {
+    carte.classList.remove("retournee");
+    carte.setAttribute("aria-label", "Carte cachée");
+  });
+  premiereCarte = null;
+  deuxiemeCarte = null;
+  bloque = false;
+
+  // Beaucoup d'erreurs de suite ? Un petit indice pour l'aider
+  if (erreursDeSuite >= ERREURS_AVANT_INDICE) {
+    erreursDeSuite = 0;
+    setTimeout(donnerIndice, 450);   // après le retournement des cartes
   }
 }
 
 // ===================================================================
-// 9. Pluie de confettis quand on gagne
+// 11. L'indice doux : on cherche une paire dont les DEUX cartes ont déjà
+// été vues, et on fait trembler l'une d'elles. L'enfant doit encore se
+// souvenir où est sa jumelle.
+// ===================================================================
+function donnerIndice() {
+  if (bloque || premiereCarte !== null) return;   // une carte est déjà retournée
+  const cachees = Array.from(plateau.querySelectorAll(".carte.vue:not(.retournee)"));
+  const candidates = cachees.filter(function (carte) {
+    return cachees.some(function (autre) {
+      return autre !== carte && autre.dataset.id === carte.dataset.id;
+    });
+  });
+  if (candidates.length === 0) return;   // aucune paire encore vue : pas d'indice
+  const choisie = candidates[Math.floor(Math.random() * candidates.length)];
+  choisie.classList.add("indice");
+  setTimeout(function () { choisie.classList.remove("indice"); }, 1300);
+}
+
+// ===================================================================
+// 12. Pluie de confettis quand on gagne
 // ===================================================================
 function lancerConfettis() {
   const symboles = monde.confettis;
@@ -239,18 +328,22 @@ function lancerConfettis() {
 }
 
 // ===================================================================
-// 10. Fin de partie
+// 13. Fin de partie
 // ===================================================================
 function victoire() {
+  // La musique se fait toute petite pendant le son de victoire
+  if (typeof baisserMusique === "function") {
+    baisserMusique(3);
+  }
+
   // Pour certains univers (les Dinos), le plateau tremble
   if (monde.secousse) {
     plateau.classList.add("secousse");
-    setTimeout(function () { plateau.classList.remove("secousse"); }, 900);
+    attentesVictoire.push(setTimeout(function () { plateau.classList.remove("secousse"); }, 900));
   }
 
-  texteResultat.textContent = "Gagné en " + coups + " coups !";
-
-  // Meilleur score = le moins de coups
+  // Les chiffres, pour les parents (en petit dans la fenêtre)
+  texteResultat.textContent = "Gagné en " + coups + " coups";
   const ancien = lireRecord();
   if (ancien === null || coups < ancien) {
     sauverRecord(coups);
@@ -258,7 +351,6 @@ function victoire() {
   } else {
     texteRecord.textContent = "Record : " + ancien + " coups";
   }
-  afficherRecord();
 
   // On met le dessin du personnage dans la fenêtre de victoire
   document.getElementById("mascotte").innerHTML =
@@ -270,29 +362,41 @@ function victoire() {
     carte.classList.add("danse");
   });
 
-  // Petite pause pour laisser finir l'animation de la dernière carte
-  attente = setTimeout(function () {
+  // On laisse le temps de voir la danse, puis la fenêtre s'ouvre.
+  // Son bouton Rejouer ne s'allume qu'un peu après (contre les touchers
+  // d'enthousiasme qui relanceraient la partie trop vite).
+  attentesVictoire.push(setTimeout(function () {
+    boutonRejouer.classList.add("pas-encore");
     fenetreVictoire.classList.add("visible");
     lancerConfettis();
-  }, 800);
+    attentesVictoire.push(setTimeout(function () {
+      boutonRejouer.classList.remove("pas-encore");
+      boutonRejouer.focus({ preventScroll: true });
+    }, DELAI_BOUTON_VICTOIRE));
+  }, DELAI_FENETRE_VICTOIRE));
+}
+
+function fermerFenetreVictoire() {
+  fenetreVictoire.classList.remove("visible");
+  boutonRejouer.classList.remove("pas-encore");
 }
 
 // ===================================================================
-// 11. Le décor qui flotte derrière le jeu
+// 14. Le décor qui flotte derrière le jeu
 // ===================================================================
 function creerDecor(symboles) {
   const decor = document.getElementById("decor");
   for (let i = 0; i < 12; i++) {
     const element = document.createElement("span");
     const symbole = symboles[i % symboles.length];
-    const taille = 18 + Math.random() * 22;               // taille au hasard
+    const tailleSymbole = 18 + Math.random() * 22;        // taille au hasard
     if (symbole === "bulle") {
       element.className = "bulle-decor";                  // une bulle dessinée
-      element.style.width = taille + "px";
-      element.style.height = taille + "px";
+      element.style.width = tailleSymbole + "px";
+      element.style.height = tailleSymbole + "px";
     } else {
       element.textContent = symbole;
-      element.style.fontSize = taille + "px";
+      element.style.fontSize = tailleSymbole + "px";
     }
     element.style.left = Math.random() * 95 + "vw";        // position au hasard
     element.style.animationDuration = 14 + Math.random() * 12 + "s";  // lent
@@ -302,7 +406,7 @@ function creerDecor(symboles) {
 }
 
 // ===================================================================
-// 12. Tout démarrer, une fois l'univers chargé
+// 15. Tout démarrer, une fois l'univers chargé
 // ===================================================================
 function lancerJeu(mondeCharge) {
   monde = mondeCharge;
@@ -311,13 +415,24 @@ function lancerJeu(mondeCharge) {
   prechargerSons(monde);
   brancherBoutonSon(document.getElementById("bouton-son"));
   initMusique(MELODIES[monde.melodie], document.getElementById("bouton-musique"));
-  document.getElementById("rejouer").addEventListener("click", nouvellePartie);
-  document.getElementById("rejouer-victoire").addEventListener("click", nouvellePartie);
+
+  // Les boutons 🏠 (en bas et dans la fenêtre de victoire) :
+  // appui long d'une seconde pour revenir à l'accueil (verrou parent)
+  document.querySelectorAll(".accueil").forEach(function (bouton) {
+    appuiLong(bouton, function () {
+      location.href = "index.html";
+    });
+  });
+
+  boutonRejouer.addEventListener("click", function () {
+    if (boutonRejouer.classList.contains("pas-encore")) return;
+    nouvellePartie();
+  });
   nouvellePartie();
 }
 
 // ===================================================================
-// 13. Le mode appli : une copie du jeu est gardée dans le téléphone
+// 16. Le mode appli : une copie du jeu est gardée dans le téléphone
 // pour pouvoir jouer même sans internet (voir le fichier sw.js)
 // ===================================================================
 if ("serviceWorker" in navigator) {

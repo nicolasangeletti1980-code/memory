@@ -143,6 +143,19 @@ function arreterMusique() {
   }
 }
 
+// Baisser la musique pendant quelques secondes (pendant le son de victoire),
+// puis la remonter doucement.
+function baisserMusique(secondes) {
+  if (!musiqueEnMarche || !volumeGeneral) return;
+  const t = audioMusique.currentTime;
+  const volume = volumeGeneral.gain;
+  volume.cancelScheduledValues(t);
+  volume.setValueAtTime(volume.value, t);
+  volume.linearRampToValueAtTime(VOLUME_MUSIQUE * 0.3, t + 0.2);   // on baisse
+  volume.setValueAtTime(VOLUME_MUSIQUE * 0.3, t + secondes);
+  volume.linearRampToValueAtTime(VOLUME_MUSIQUE, t + secondes + 0.8); // on remonte
+}
+
 // ===== 7. Brancher la musique sur une page =====
 // - melodie : une des comptines de la liste MELODIES
 // - bouton : le bouton 🎵 qui coupe ou remet la musique
@@ -156,7 +169,8 @@ function initMusique(melodie, bouton) {
   }
   afficherBouton();
 
-  bouton.addEventListener("click", function () {
+  // Couper ou remettre la musique : il faut un appui long (voir appui.js)
+  appuiLong(bouton, function () {
     musiqueActive = !musiqueActive;
     try {
       localStorage.setItem(CLE_MUSIQUE, musiqueActive ? "oui" : "non");

@@ -2,8 +2,9 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <!-- Cette ligne adapte la page à la largeur du téléphone (pas besoin de zoomer) -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Cette ligne adapte la page à la largeur du téléphone (pas besoin de zoomer).
+       On interdit aussi le zoom à deux doigts. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#ffc2e2">
   <title>Les Memory de Myrtille</title>
 
@@ -53,6 +54,44 @@
     .t-bleu   { color: #3aa0e8; }
     .t-violet { color: #9b6bff; }
 
+    /* ===== Le choix de la taille de partie : chenille ou papillon ===== */
+    .tailles {
+      display: flex;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 3px solid #fff;
+      border-radius: 30px;
+      padding: 4px;
+      margin-bottom: 14px;
+      box-shadow: 0 3px 8px rgba(155, 107, 255, 0.2);
+    }
+
+    .taille {
+      font-family: inherit;
+      font-size: 1.05rem;
+      font-weight: bold;
+      color: #5b3a8c;
+      border: none;
+      border-radius: 24px;
+      background: none;
+      padding: 8px 16px;
+      min-height: 48px;           /* assez grand pour un petit doigt */
+      cursor: pointer;
+    }
+
+    /* Le grand dessin du bouton (elle ne lit pas encore) */
+    .taille span {
+      font-size: 1.6rem;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+
+    /* La taille choisie est mise en avant */
+    .taille.choisie {
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(155, 107, 255, 0.35);
+    }
+
     /* ===== La grille des univers : 2 colonnes ===== */
     .mondes {
       display: grid;
@@ -82,8 +121,8 @@
     /* Le personnage de l'univers, qui se dandine doucement */
     .monde svg {
       /* taille qui s'adapte à la largeur ET à la hauteur de l'écran */
-      width: min(26vw, 100px, 13vh);
-      height: min(26vw, 100px, 13vh);
+      width: min(26vw, 100px, 11.5vh);
+      height: min(26vw, 100px, 11.5vh);
       background: #fff;
       border-radius: 20px;
       padding: 6px;
@@ -147,10 +186,50 @@
       cursor: pointer;
       box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
       z-index: 5;
+      -webkit-touch-callout: none;   /* pas de menu du téléphone */
     }
 
     .rond.eteint {
       opacity: 0.55;
+    }
+
+    /* L'anneau qui se remplit pendant l'appui long (voir appui.js) */
+    @property --remplissage {
+      syntax: "<percentage>";
+      inherits: false;
+      initial-value: 0%;
+    }
+
+    .rond::after {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      background: conic-gradient(#9b6bff var(--remplissage), transparent 0);
+      -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+      mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .rond.appui::after {
+      opacity: 1;
+      animation: remplir 1s linear forwards;
+    }
+
+    @keyframes remplir {
+      from { --remplissage: 0%; }
+      to   { --remplissage: 100%; }
+    }
+
+    /* Un toucher trop court : le bouton se secoue un peu */
+    .rond.refus {
+      animation: refus 0.4s ease;
+    }
+
+    @keyframes refus {
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
     }
 
     /* ===== Le décor qui flotte doucement derrière ===== */
@@ -194,6 +273,13 @@
     <span class="t-violet">Myrtille</span>
   </h1>
 
+  <!-- La taille de partie : chenille (6 paires, grandes cartes)
+       ou papillon (8 paires). Le téléphone s'en souvient. -->
+  <div class="tailles" role="group" aria-label="Taille de la partie">
+    <button class="taille" data-taille="chenille"><span>🐛</span>Chenille</button>
+    <button class="taille" data-taille="papillon"><span>🦋</span>Papillon</button>
+  </div>
+
   <!-- Les univers (une tuile par univers, créées par le JavaScript) -->
   <nav class="mondes" id="mondes"></nav>
 
@@ -210,6 +296,7 @@
 
   <!-- La liste des univers, les outils de dessin et la musique -->
   <script src="mondes/outils.js"></script>
+  <script src="appui.js"></script>
   <script src="musique.js"></script>
   <script>
     // ===== 1. Créer une tuile par univers =====
@@ -248,6 +335,33 @@
     }
 
     chargerUnivers(0);
+
+    // ===== 1 bis. Chenille ou papillon ? =====
+    // Le choix est gardé dans le téléphone ; le jeu le lit au démarrage.
+    const CLE_TAILLE = "memory-taille";
+    let tailleChoisie = "papillon";
+    try {
+      if (localStorage.getItem(CLE_TAILLE) === "chenille") tailleChoisie = "chenille";
+    } catch (e) {}
+
+    function afficherTaille() {
+      document.querySelectorAll(".taille").forEach(function (bouton) {
+        const choisie = bouton.dataset.taille === tailleChoisie;
+        bouton.classList.toggle("choisie", choisie);
+        bouton.setAttribute("aria-pressed", choisie ? "true" : "false");
+      });
+    }
+
+    document.querySelectorAll(".taille").forEach(function (bouton) {
+      bouton.addEventListener("click", function () {
+        tailleChoisie = bouton.dataset.taille;
+        try {
+          localStorage.setItem(CLE_TAILLE, tailleChoisie);
+        } catch (e) {}
+        afficherTaille();
+      });
+    });
+    afficherTaille();
 
     // ===== 2. Le mode appli : le jeu marche même sans internet =====
     // Le "service worker" est un petit programme qui garde une copie

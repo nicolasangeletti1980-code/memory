@@ -1,7 +1,7 @@
 {
   "name": "Les Memory de Myrtille",
   "short_name": "Memory",
-  "description": "Trois jeux de Memory pour enfants : Myrtille, la Mer et les Dinos.",
+  "description": "Des jeux de Memory pour enfants : Myrtille, la Mer, les Dinos, la Ferme, le Zoo et la Forêt.",
   "lang": "fr",
   "start_url": "./index.html",
   "scope": "./",
