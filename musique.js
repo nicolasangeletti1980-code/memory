@@ -172,7 +172,14 @@ function initMusique(melodie, bouton) {
   // Les navigateurs interdisent la musique avant qu'on ait touché l'écran :
   // elle démarre donc au premier toucher, n'importe où sur la page.
   function premierToucher() {
-    if (musiqueActive) demarrerMusique();
+    if (!musiqueActive) return;
+    // Si le 1er toucher était un glissement du doigt, le navigateur a laissé
+    // le synthétiseur en pause. On jette les notes prévues et on relance.
+    if (musiqueEnMarche && audioMusique.state === "suspended") {
+      arreterMusique();
+      volumeGeneral.disconnect();
+    }
+    demarrerMusique();
   }
   document.addEventListener("click", premierToucher);
   document.addEventListener("touchend", premierToucher);
