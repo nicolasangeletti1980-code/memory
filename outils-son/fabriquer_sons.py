@@ -548,6 +548,51 @@ def dino(nom):
     return lambda: rugissement(duree, hauteur, 0.25)
 
 
+def dino_volcan():
+    """Le volcan. Le rugissement de sons.js à 50 Hz est presque muet sur un
+    haut-parleur de téléphone (il ne joue rien sous 200-300 Hz). On garde ce
+    grondement, et on ajoute ce que le téléphone sait jouer : des harmoniques
+    entre 200 et 2000 Hz (l'oreille « devine » alors le grave qui manque),
+    un gros « BOUM » d'éruption et des crépitements de lave."""
+    base = rugissement(1.0, 50, 0.25)
+    # 1) Le grondement « audible » : une voix très grave mais pleine d'harmoniques
+    d = 1.35
+    f0 = courbe([(0, 45), (0.2, 56), (0.8, 50), (d, 40)], d, log=True)
+    amp = courbe([(0, 0), (0.03, 0.7), (0.25, 1), (0.9, 0.7), (d, 0)], d)
+    gronde = voix(f0, [(350, 250, 1), (900, 400, 0.6)], np.ones(nb(d)), souffle=0.6,
+                  pente=0.4, rugosite=0.6, fmax=2500, tremblement=0.04)
+    gronde = np.tanh(2 * gronde / np.abs(gronde).max()) * amp     # saturation : encore plus d'harmoniques
+    # 2) Le « BOUM » : un coup grave qui tombe, saturé, + un souffle d'explosion
+    db = 0.6
+    tb = temps(db)
+    boum = np.tanh(3 * np.sin(phase(courbe([(0, 160), (0.15, 70), (db, 45)], db, log=True)))
+                   * np.exp(-tb / 0.12)) * np.minimum(tb / 0.003, 1)
+    souffle = bruit_bande(nb(db), 500, 800) * np.exp(-tb / 0.1) * np.minimum(tb / 0.003, 1)
+    # 3) Les crépitements de lave : de petits « crac » au hasard
+    morceaux = [(0, 0.5 * base / np.abs(base).max()), (0, 0.45 * gronde),
+                (0.08, 0.7 * boum + 0.35 * souffle)]
+    for _ in range(22):
+        dc = 0.012
+        crac = bruit_bande(nb(dc), de.uniform(1200, 2800), 1200) * np.exp(-temps(dc) / 0.003)
+        morceaux.append((de.uniform(0.3, 1.2), de.uniform(0.05, 0.14) * crac))
+    return assembler(morceaux)
+
+
+def dino_diplodocus():
+    """Le diplodocus : un appel grave et doux. On garde le rugissement de
+    sons.js (75 Hz) et on ajoute une voix « ooo-ooh » pleine d'harmoniques,
+    pour qu'on l'entende aussi sur un haut-parleur de téléphone."""
+    base = rugissement(1.0, 75, 0.25)
+    d = 1.2
+    f0 = courbe([(0, 70), (0.3, 95), (0.8, 85), (d, 65)], d, log=True)
+    F1 = courbe([(0, 350), (0.4, 500), (d, 380)], d)
+    F2 = courbe([(0, 800), (0.4, 1000), (d, 750)], d)
+    amp = courbe([(0, 0), (0.08, 0.8), (0.4, 1), (0.9, 0.8), (d, 0)], d)
+    appel = voix(f0, [(F1, 150, 1), (F2, 200, 0.7), (2000, 300, 0.2)], amp, souffle=0.25,
+                 pente=0.6, rugosite=0.15, fmax=3000, vibrato=(4, 0.015))
+    return assembler([(0, 0.5 * base / np.abs(base).max()), (0, appel / np.abs(appel).max())])
+
+
 def dino_victoire():
     # rugissementVictoire : le grand rugissement du T-rex (un grave + un aigu)
     return assembler([(0, rugissement(1.9, 90, 0.35)), (0.05, rugissement(1.7, 150, 0.2))])
@@ -964,9 +1009,10 @@ UNIVERS = {
             ("saint-jacques", mer_saint_jacques), ("chirurgien", mer_chirurgien),
             ("sirene", mer_sirene), ("jaune", mer_jaune), ("trident", mer_trident),
             ("victoire", mer_victoire)],
-    "dino": [(nom, dino(nom)) for nom in ("trex", "triceratops", "diplodocus", "stegosaure",
-                                          "pteranodon", "ankylosaure", "bebe", "volcan")]
-            + [("victoire", dino_victoire)],
+    "dino": [("trex", dino("trex")), ("triceratops", dino("triceratops")),
+             ("diplodocus", dino_diplodocus), ("stegosaure", dino("stegosaure")),
+             ("pteranodon", dino("pteranodon")), ("ankylosaure", dino("ankylosaure")),
+             ("bebe", dino("bebe")), ("volcan", dino_volcan), ("victoire", dino_victoire)],
     "ferme": [("vache", ferme_vache), ("cochon", ferme_cochon), ("coq", ferme_coq),
               ("mouton", ferme_mouton), ("cheval", ferme_cheval), ("canard", ferme_canard),
               ("lapin", ferme_lapin), ("tracteur", ferme_tracteur), ("victoire", ferme_victoire)],
@@ -1028,6 +1074,13 @@ def sonie(x):
     return 10 * np.log10(np.mean(garde) + 1e-12)
 
 
+def sonie_telephone(x):
+    """Le volume ressenti sur un haut-parleur de téléphone : on enlève
+    d'abord presque tout ce qui est sous 300 Hz (pente très raide),
+    comme le fait un petit haut-parleur."""
+    return sonie(filtre_fft(x, lambda f: (f / 300) ** 8 / np.sqrt(1 + (f / 300) ** 16)))
+
+
 def limiteur(x, plafond):
     """Baisse le volume juste aux endroits qui dépassent le plafond,
     en douceur (on ne coupe pas brutalement les pointes)."""
@@ -1061,8 +1114,11 @@ def fabriquer_tout():
             x = fonction()
             x = couper_silences(adoucir_aigus(x))
             bruts[(univers, nom)] = x / np.abs(x).max() * CRETE
-    # Le volume ressenti de chaque son quand sa pointe est à 0,7
-    sonies = {cle: sonie(x) for cle, x in bruts.items()}
+    # Le volume ressenti de chaque son quand sa pointe est à 0,7.
+    # On fait la moyenne entre l'écoute « normale » (casque, enceinte) et
+    # l'écoute sur un haut-parleur de téléphone : un son trop grave, qui
+    # perd beaucoup sur téléphone, est ainsi un peu remonté.
+    sonies = {cle: (sonie(x) + sonie_telephone(x)) / 2 for cle, x in bruts.items()}
     # La cible : le niveau « du milieu ». Les sons plus forts sont baissés ;
     # les sons plus faibles (très « pointus ») sont montés en écrêtant
     # doucement leurs pointes (au plus 9 dB ; en pratique seul le tracteur,

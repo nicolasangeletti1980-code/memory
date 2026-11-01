@@ -133,46 +133,51 @@
         // - front large et bombé, stop marqué, museau droit
         //   à peu près aussi long que le crâne, truffe noire.
         '<svg viewBox="0 0 100 100">' +
-        // Le cou et le poitrail (poil long et un peu ondulé)
-        avecContour('<path d="M18 97 Q17 75 33 66 L67 66 Q83 75 82 97 Z"/>', NOIR, NOIR_CONTOUR) +
-        '<path d="M27 78 q3 3 0 6 q-3 3 0 6 M73 78 q-3 3 0 6 q-3 3 0 6" stroke="' + BRILLANT + '" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
+        // Le cou et le poitrail
+        avecContour('<path d="M15 98 Q15 76 34 67 L66 67 Q85 76 85 98 Z"/>', NOIR, NOIR_CONTOUR) +
+        // Les reflets du poil brillant sur le poitrail
+        '<path d="M22 88 Q24 78 32 73 M78 88 Q76 78 68 73" stroke="' + BRILLANT + '" stroke-width="2" fill="none" stroke-linecap="round"/>' +
         // Les deux taches feu du poitrail, côte à côte
-        '<ellipse cx="43" cy="86" rx="6.5" ry="7" fill="' + FEU + '"/>' +
-        '<ellipse cx="57" cy="86" rx="6.5" ry="7" fill="' + FEU + '"/>' +
-        // Le feu sous la gorge
-        '<ellipse cx="50" cy="70" rx="10" ry="8" fill="' + FEU + '"/>' +
+        '<ellipse cx="43" cy="88" rx="6.5" ry="7" fill="' + FEU + '"/>' +
+        '<ellipse cx="57" cy="88" rx="6.5" ry="7" fill="' + FEU + '"/>' +
+        // Le feu sous la gorge (il rejoint celui des babines)
+        '<ellipse cx="50" cy="72" rx="11" ry="7" fill="' + FEU + '"/>' +
         // La tête : le crâne large et bombé, puis le museau droit
         avecContour(
-          '<ellipse cx="50" cy="34" rx="25" ry="21"/>' +
-          '<path d="M37 40 Q36 62 42 68 Q50 72 58 68 Q64 62 63 40 Z"/>',
+          '<ellipse cx="50" cy="33" rx="27" ry="21"/>' +
+          '<path d="M36 40 Q35 60 41 67 Q50 71 59 67 Q65 60 64 40 Z"/>',
           NOIR, NOIR_CONTOUR) +
         // Le reflet brillant sur le front bombé
-        '<path d="M38 20 Q50 13 62 20" stroke="' + BRILLANT + '" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+        '<path d="M38 19 Q50 12 62 19" stroke="' + BRILLANT + '" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
         // Le feu au bas du museau et autour des babines (le dessus reste noir)
-        '<path d="M37.5 50 Q37 63 42 68 Q50 72 58 68 Q63 63 62.5 50 Q57 57 50 57 Q43 57 37.5 50 Z" fill="' + FEU + '"/>' +
+        '<path d="M36 49 Q35.5 61 41 67 Q50 71 59 67 Q64.5 61 64 49 Q58 56 50 56 Q42 56 36 49 Z" fill="' + FEU + '"/>' +
+        // Le feu des babines rejoint celui de la gorge, sous le menton
+        '<path d="M43 66 Q50 69.5 57 66 Q60 72 56 77 Q50 79 44 77 Q40 72 43 66 Z" fill="' + FEU + '"/>' +
         // Le stop (le petit creux entre les yeux, en haut du museau)
-        '<path d="M45 41 Q50 44 55 41" stroke="' + BRILLANT + '" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+        '<path d="M45 40 Q50 43 55 40" stroke="' + BRILLANT + '" stroke-width="2" fill="none" stroke-linecap="round"/>' +
         // La truffe noire, avec un reflet
-        '<ellipse cx="50" cy="56" rx="6.5" ry="4.8" fill="#0c0c12" stroke="' + BRILLANT + '" stroke-width="1.2"/>' +
-        '<ellipse cx="48" cy="54.5" rx="2" ry="1.2" fill="#9a9aa8"/>' +
+        '<ellipse cx="50" cy="55" rx="7" ry="5" fill="#0c0c12" stroke="' + BRILLANT + '" stroke-width="1.2"/>' +
+        '<ellipse cx="47.8" cy="53.4" rx="2.2" ry="1.3" fill="#9a9aa8"/>' +
         // La bouche et la petite langue rose
-        '<path d="M50 61 v2.5 M44.5 64 q5.5 4 11 0" stroke="#5a3210" stroke-width="2" fill="none" stroke-linecap="round"/>' +
-        '<path d="M47.5 66 q2.5 5 5 0 Z" fill="#ff8fa3"/>' +
+        '<path d="M50 60 v2.5 M44.5 63 q5.5 4 11 0" stroke="#5a3210" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+        '<path d="M47.5 65 q2.5 5 5 0 Z" fill="#ff8fa3"/>' +
         // Les taches feu bien nettes au-dessus des yeux
-        '<ellipse cx="41" cy="28" rx="4.2" ry="2.8" fill="' + FEU + '"/>' +
-        '<ellipse cx="59" cy="28" rx="4.2" ry="2.8" fill="' + FEU + '"/>' +
+        '<ellipse cx="40" cy="26.5" rx="4.5" ry="3" fill="' + FEU + '"/>' +
+        '<ellipse cx="60" cy="26.5" rx="4.5" ry="3" fill="' + FEU + '"/>' +
         // Les yeux marron foncé, avec un reflet blanc
-        '<circle cx="41" cy="37" r="5" fill="#7a4a1e"/><circle cx="59" cy="37" r="5" fill="#7a4a1e"/>' +
-        '<circle cx="41" cy="37" r="3.2" fill="#0c0c12"/><circle cx="59" cy="37" r="3.2" fill="#0c0c12"/>' +
-        '<circle cx="42.6" cy="35.4" r="1.7" fill="#fff"/><circle cx="60.6" cy="35.4" r="1.7" fill="#fff"/>' +
-        // Les oreilles en triangle, attachées haut sur le crâne,
-        // qui tombent le long des joues (bout un peu arrondi)
+        '<circle cx="40" cy="35.5" r="5" fill="#7a4a1e"/><circle cx="60" cy="35.5" r="5" fill="#7a4a1e"/>' +
+        '<circle cx="40" cy="35.5" r="3.2" fill="#0c0c12"/><circle cx="60" cy="35.5" r="3.2" fill="#0c0c12"/>' +
+        '<circle cx="41.6" cy="33.9" r="1.7" fill="#fff"/><circle cx="61.6" cy="33.9" r="1.7" fill="#fff"/>' +
+        // Les oreilles en triangle : larges en haut (attachées haut sur
+        // le crâne), elles tombent le long des joues jusqu'au coin des
+        // babines et finissent par un bout un peu arrondi
         avecContour(
-          '<path d="M38 17 Q30 13 24 19 Q19 36 23 56 Q26 63 30 59 Q34 44 37 30 Z"/>' +
-          '<path d="M62 17 Q70 13 76 19 Q81 36 77 56 Q74 63 70 59 Q66 44 63 30 Z"/>',
+          '<path d="M34 15 Q23 12 17 20 Q11 33 16 47 Q20 57 25 61 Q29 63 30 57 Q29 42 30 32 Q31 22 34 15 Z"/>' +
+          '<path d="M66 15 Q77 12 83 20 Q89 33 84 47 Q80 57 75 61 Q71 63 70 57 Q71 42 70 32 Q69 22 66 15 Z"/>',
           NOIR, NOIR_CONTOUR) +
-        // Les reflets brillants sur les oreilles
-        '<path d="M27 24 Q24 38 27 52 M73 24 Q76 38 73 52" stroke="' + BRILLANT + '" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+        // Le pli en haut de l'oreille et les reflets brillants
+        '<path d="M19 21 Q25 15 32 16 M68 16 Q75 15 81 21" stroke="' + BRILLANT + '" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+        '<path d="M19 30 Q17 42 23 53 M81 30 Q83 42 77 53" stroke="' + BRILLANT + '" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
         '</svg>'
     },
     {
