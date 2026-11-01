@@ -246,7 +246,7 @@ def cloche(frequence, duree, volume):
     son = np.zeros(n)
     for mult, rel in ((1, 1), (2.76, 0.3), (5.4, 0.12)):
         f = frequence * mult
-        if f > 6500:
+        if f > 6000:
             continue                          # trop aigu pour de petites oreilles
         v = volume * rel * (0.5 if f > 4500 else 1)
         env = np.full(n, 1e-4)
@@ -285,9 +285,24 @@ def note_boite(frequence, duree=0.9, volume=1.0):
     if aigu > 5500:
         aigu = 3.0 * frequence
     son += 0.25 * np.sin(2 * np.pi * aigu * t) * np.exp(-t / 0.035)
-    son *= np.minimum(t / 0.002, 1)
-    fin = np.minimum((duree - t) / 0.05, 1)  # s'éteint sans clic
+    son *= np.sin(np.pi / 2 * np.minimum(t / 0.003, 1)) ** 2   # attaque sans clic
+    fin = np.minimum((duree - t) / 0.03, 1)  # s'éteint sans clic
     return volume * son * fin
+
+
+def melodie_boite(notes, duree=0.55):
+    """Joue une mélodie de boîte à musique : notes = liste de (début, fréquence).
+    Quand la même note revient, la lamelle est « réarmée » : la note
+    précédente s'arrête (sinon les deux se mélangent mal)."""
+    morceaux = []
+    for i, (debut, f) in enumerate(notes):
+        d = duree
+        for debut2, f2 in notes[i + 1:]:
+            if f2 == f:
+                d = min(d, debut2 - debut + 0.02)
+                break
+        morceaux.append((debut, note_boite(f, d)))
+    return assembler(morceaux)
 
 
 def corde_harpe(frequence, duree=1.2, volume=1.0):
@@ -428,7 +443,7 @@ def myrtille_ours_blanc():
     # Boîte à musique : le début de « Au clair de la lune » (do do do ré mi ré)
     notes = [(0, 1046.5), (0.16, 1046.5), (0.32, 1046.5), (0.48, 1174.7),
              (0.64, 1318.5), (0.96, 1174.7)]
-    return assembler([(debut, note_boite(f, 0.62 if debut > 0.9 else 0.5)) for debut, f in notes])
+    return melodie_boite(notes, 0.62)
 
 
 def myrtille_ours_marron():
@@ -436,9 +451,8 @@ def myrtille_ours_marron():
     # (mi mi sol, mi mi sol, do)
     notes = [(0, 659.3), (0.12, 659.3), (0.24, 784), (0.54, 659.3),
              (0.66, 659.3), (0.78, 784), (1.08, 1046.5)]
-    morceaux = [(debut, note_boite(f, 0.5)) for debut, f in notes]
-    morceaux.append((1.08, 0.5 * note_boite(523.25, 0.5)))  # un do grave en plus : câlin
-    return assembler(morceaux)
+    return assembler([(0, melodie_boite(notes, 0.5)),
+                      (1.08, 0.5 * note_boite(523.25, 0.5))])   # un do grave en plus : câlin
 
 
 def myrtille_victoire():
@@ -643,12 +657,12 @@ def ferme_canard():
 def ferme_lapin():
     # Le lapin grignote : de tout petits « crac » très rapides
     morceaux = []
-    for debut in (0.0, 0.1, 0.19, 0.3, 0.41, 0.62, 0.72, 0.82, 0.93, 1.04):
-        for j in range(de.integers(3, 6)):
-            d = 0.025
+    for debut in (0.0, 0.09, 0.18, 0.27, 0.36, 0.45, 0.66, 0.75, 0.84, 0.93, 1.02):
+        for j in range(de.integers(4, 7)):
+            d = 0.03
             t = temps(d)
-            crac = bruit_bande(nb(d), de.uniform(1500, 3200), 1500) * np.exp(-t / 0.004)
-            morceaux.append((debut + j * de.uniform(0.006, 0.012), 0.3 * crac))
+            crac = bruit_bande(nb(d), de.uniform(1300, 2800), 1400) * np.exp(-t / 0.006)
+            morceaux.append((debut + j * de.uniform(0.008, 0.014), de.uniform(0.2, 0.3) * crac))
         t = temps(0.03)
         dent = np.sin(2 * np.pi * de.uniform(700, 950) * t) * np.exp(-t / 0.008)
         morceaux.append((debut, 0.25 * dent))
@@ -661,7 +675,7 @@ def coup_moteur(force=1.0):
     t = temps(d)
     boum = np.sin(phase(courbe([(0, 120), (d, 55)], d, log=True))) * np.exp(-t / 0.04)
     teuf = bruit_bande(nb(d), 550, 600) * np.exp(-t / 0.03)
-    return force * (0.6 * boum + 0.8 * teuf) * np.minimum(t / 0.002, 1)
+    return force * (0.35 * boum + 0.8 * teuf) * np.minimum(t / 0.002, 1)
 
 
 def ferme_tracteur():
@@ -678,6 +692,12 @@ def ferme_tracteur():
         debut += ecart
         ecart = max(0.12, ecart * 0.9)
         i += 1
+    # le « ronron » continu du moteur, qui bat au rythme des explosions
+    d = 1.5 - 0.42
+    ronron = bruit_bande(nb(d), 350, 500) * 0.25 * np.minimum(temps(d) / 0.05, 1)
+    ronron += 0.3 * voix(np.full(nb(d), 48.0), [(400, 400, 1)], np.ones(nb(d)), pente=1.2,
+                         rugosite=0.3, fmax=2000)
+    morceaux.append((0.42, 0.8 * ronron))
     son = assembler(morceaux)
     fin = np.minimum((len(son) - np.arange(len(son))) / nb(0.25), 1)
     return son * fin
@@ -964,6 +984,7 @@ def adoucir_aigus(x):
 
 def couper_silences(x):
     """Enlève le silence au début (le son part tout de suite) et à la fin."""
+    x = np.concatenate([x, np.zeros(nb(0.05))])   # de la place pour finir en douceur
     a = np.abs(x)
     haut = a.max()
     debut = max(int(np.argmax(a > haut * 0.01)) - nb(0.001), 0)
