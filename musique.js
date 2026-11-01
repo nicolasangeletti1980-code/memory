@@ -9,10 +9,10 @@
 
 // ===== 1. Les notes =====
 // Chaque note a un numéro (do = 72). Plus le numéro est grand, plus c'est aigu.
-// "_bas" = la même note, mais plus grave.
+// "_bas" = la même note, mais plus grave. "b" = bémol (un demi-ton plus bas).
 const NOTES = {
-  sol_bas: 67, la_bas: 69, si_bas: 71,
-  do: 72, re: 74, mi: 76, fa: 77, sol: 79, la: 81
+  sol_bas: 67, la_bas: 69, sib_bas: 70, si_bas: 71,
+  do: 72, re: 74, mib: 75, mi: 76, fa: 77, sol: 79, la: 81
 };
 
 // ===== 2. Les comptines =====
@@ -21,6 +21,31 @@ const NOTES = {
 // "-:2" veut dire : un silence de 2 temps.
 // tempo = nombre de temps par minute (plus c'est grand, plus c'est rapide).
 const MELODIES = {
+  // « La Marseillaise » (Rouget de Lisle, 1792, domaine public)
+  // Notes relevées sur la partition LilyPond de marseillaise.org (en sol),
+  // transposées ici en do. Couplet et refrain en entier.
+  marseillaise: {
+    tempo: 100,
+    notes:
+      // « Allons enfants de la Patrie, le jour de gloire est arrivé ! »
+      "sol_bas:0.25 sol_bas:0.75 sol_bas:0.25 do do re re sol:1.5 mi:0.5 do:0.5 -:0.25 do:0.25 mi:0.75 do:0.25 " +
+      "la_bas fa:2 re:0.75 si_bas:0.25 do:2 -:1 " +
+      // « Contre nous de la tyrannie, l'étendard sanglant est levé »
+      "do:0.75 re:0.25 mi mi mi fa:0.75 mi:0.25 mi re -:1 re:0.75 mi:0.25 fa fa fa sol:0.75 fa:0.25 mi:2 -:1 " +
+      "sol:0.75 sol:0.25 sol mi:0.75 do:0.25 sol mi:0.75 do:0.25 sol_bas:2 -:0.75 " +
+      // « Entendez-vous dans les campagnes mugir ces féroces soldats ? »
+      "sol_bas:0.25 sol_bas:0.75 si_bas:0.25 re:2 fa re:0.75 si_bas:0.25 re do sib_bas:2 " +
+      "la_bas do:0.75 do:0.25 do si_bas:0.75 do:0.25 re:3 -:0.5 " +
+      // « Ils viennent jusque dans vos bras égorger vos fils, vos compagnes ! »
+      "re:0.5 mib:1.5 mib:0.5 mib:0.5 mib:0.5 fa:0.5 sol:0.5 re:3 mib:0.5 re:0.5 " +
+      "do:1.5 do:0.5 do:0.5 mib:0.5 re:0.5 do:0.5 do si_bas:0.5 -:2.25 " +
+      // « Aux armes, citoyens ! Formez vos bataillons ! »
+      "sol:0.25 sol:2.75 sol:0.25 mi:0.75 do:0.25 re:3 -:0.75 " +
+      "sol:0.25 sol:2.75 sol:0.25 mi:0.75 do:0.25 re:2.5 -:0.5 " +
+      // « Marchons, marchons ! Qu'un sang impur abreuve nos sillons ! »
+      "sol_bas do:2 -:1 re mi:2 -:2 fa:2 sol la re:2.5 -:0.5 " +
+      "la sol:2.75 mi:0.25 fa:0.75 re:0.25 do:3 -:4"
+  },
   // « Ah ! vous dirai-je, maman »
   vousDiraiJe: {
     tempo: 100,
