@@ -240,7 +240,7 @@
     titreVictoire: "Splash ! Bravo !",
     decor: ["bulle", "bulle", "bulle", "bulle", "🐠", "🐚"],   // ce qui flotte derrière le jeu
     confettis: ["🐚", "🐠", "💙", "⭐", "✨"],
-    melodie: "vousDiraiJe",                   // la comptine (voir musique.js)
+    melodie: "petitNavire",                   // la comptine (voir musique.js)
     sons: "bulles",                     // le type de bruitages (voir sons.js)
     secousse: false,                    // les cartes tremblent à la victoire ?
     ancienneCleRecord: "memory-mer-record"       // pour garder les records d'avant

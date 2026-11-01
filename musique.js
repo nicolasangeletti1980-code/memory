@@ -49,6 +49,29 @@ const MELODIES = {
       "do:0.5 do:0.5 do do:0.5 do:0.5 do do:0.5 do:0.5 do:0.5 do:0.5 do do " +
       "do do do sol_bas la_bas la_bas sol_bas:2 mi mi re re do:4 -:4"
   },
+  // « Il était un petit navire » (chanson traditionnelle, domaine public)
+  // Notes relevées sur la partition de Wikipédia (en sol), transposées ici en do.
+  petitNavire: {
+    tempo: 96,
+    notes:
+      "mi:0.5 mi:0.5 mi:0.5 sol_bas mi fa:0.5 mi:0.5 mi re:0.5 re:0.5 re:0.5 re:0.5 sol_bas re " +
+      "mi:0.5 re:0.5 re do:0.5 mi:0.5 mi:0.5 mi:0.5 mi mi mi:0.5 sol:0.5 fa:0.5 mi:0.5 " +
+      "re:0.5 re:0.5 re:0.5 re:0.5 re re re:0.5 fa:0.5 mi:0.5 re:0.5 do:0.5 sol_bas:0.5 do:0.5 mi:0.5 sol:2 mi " +
+      // le refrain « Ohé ! Ohé ! matelot... »
+      "sol mi sol fa:0.75 mi:0.25 re:2 re:0.5 mi:0.5 fa:0.5 sol:0.5 la sol la sol mi:3 " +
+      "mi sol mi sol fa:0.75 mi:0.25 re:2 re:0.5 mi:0.5 fa:0.5 sol:0.5 la sol la sol do:2 -:4"
+  },
+  // « Promenons-nous dans les bois » (comptine du XVIIe siècle, domaine public)
+  // Notes relevées sur la partition de Wikipédia (en fa), transposées ici en do.
+  promenons: {
+    tempo: 110,
+    notes:
+      "mi:0.5 mi:0.5 do mi:0.5 mi:0.5 do mi:0.5 mi:0.5 do:0.5 sol_bas:0.5 mi:0.5 mi:0.5 do " +
+      "do:0.5 do:0.5 do do re do:0.5 do:0.5 re sol do " +
+      "do:0.5 do:0.5 do do re do:0.5 do:0.5 re sol do " +
+      // « Loup, y es-tu ? Que fais-tu ? M'entends-tu ? »
+      "sol:0.5 sol:0.5 sol sol:0.5 sol:0.5 sol sol:0.5 sol:0.5 sol -:4"
+  },
   // « Frère Jacques »
   frereJacques: {
     tempo: 120,

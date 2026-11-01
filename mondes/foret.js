@@ -263,7 +263,7 @@
     titreVictoire: "Hou hou ! Bravo !",
     decor: ["🍂", "🍁", "🌰", "🍄"],          // ce qui flotte derrière le jeu
     confettis: ["🦊", "🦉", "🍁", "⭐", "🍄"],
-    melodie: "clairDeLune",                  // la comptine (voir musique.js)
+    melodie: "promenons",                  // la comptine (voir musique.js)
     sons: "clochette",                       // le type de bruitages (voir sons.js)
     secousse: false,                         // les cartes tremblent à la victoire ?
     ancienneCleRecord: ""                    // pas de vieux record à reprendre

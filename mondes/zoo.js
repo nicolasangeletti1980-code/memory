@@ -249,7 +249,7 @@
     titreVictoire: "Youpi ! Bravo !",
     decor: ["🍌", "🌴", "🐾", "☀️"],          // ce qui flotte derrière le jeu
     confettis: ["🐒", "🦁", "🍌", "⭐", "🐘"],
-    melodie: "frereJacques",                 // la comptine (voir musique.js)
+    melodie: "vousDiraiJe",                  // la comptine (voir musique.js)
     sons: "clochette",                       // le type de bruitages (voir sons.js)
     secousse: false,                         // les cartes tremblent à la victoire ?
     ancienneCleRecord: ""                    // pas de vieux record à reprendre
