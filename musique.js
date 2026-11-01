@@ -97,6 +97,24 @@ const MELODIES = {
       // « Loup, y es-tu ? Que fais-tu ? M'entends-tu ? »
       "sol:0.5 sol:0.5 sol sol:0.5 sol:0.5 sol sol:0.5 sol:0.5 sol -:4"
   },
+  // « La marche des dinos » : un air original, composé pour le jeu.
+  // Des gros pas qui rebondissent, un passage sur la pointe des pieds,
+  // puis deux « BOUM » graves avant de repartir.
+  marcheDinos: {
+    tempo: 132,
+    notes:
+      // les gros pas qui rebondissent
+      "do:0.5 -:0.5 sol_bas:0.5 -:0.5 do:0.5 mi:0.5 sol re:0.5 -:0.5 sol_bas:0.5 -:0.5 re:0.5 fa:0.5 la " +
+      "do:0.5 -:0.5 sol_bas:0.5 -:0.5 do:0.5 mi:0.5 sol la:0.5 sol:0.5 fa:0.5 mi:0.5 re:0.5 si_bas:0.5 do -:1 " +
+      // sur la pointe des pieds...
+      "mi:0.25 mib:0.25 re:0.5 -:0.5 mi:0.25 mib:0.25 re:0.5 -:0.5 sol_bas:0.5 la_bas:0.5 si_bas:0.5 re:0.5 do:0.5 -:0.5 " +
+      "mi:0.25 mib:0.25 re:0.5 -:0.5 mi:0.25 mib:0.25 re:0.5 -:0.5 fa:0.5 mi:0.5 re:0.5 si_bas:0.5 sol_bas -:1 " +
+      // BOUM ! BOUM !
+      "sol_bas:1.5 -:0.5 sol_bas:1.5 -:0.5 " +
+      // et ça repart !
+      "do:0.5 -:0.5 sol_bas:0.5 -:0.5 do:0.5 mi:0.5 sol re:0.5 -:0.5 sol_bas:0.5 -:0.5 re:0.5 fa:0.5 la " +
+      "sol:0.5 la:0.5 sol:0.5 fa:0.5 mi:0.5 re:0.5 mi:0.5 fa:0.5 sol:0.5 -:0.5 sol_bas:0.5 -:0.5 do:2 -:4"
+  },
   // « Frère Jacques »
   frereJacques: {
     tempo: 120,

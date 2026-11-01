@@ -227,7 +227,7 @@
     titreVictoire: "ROAAAR ! Bravo !",
     decor: ["🍃", "🌿", "🦕", "🍃", "🥚"],   // ce qui flotte derrière le jeu
     confettis: ["🦖", "🦕", "🥚", "🌋", "⭐"],
-    melodie: "frereJacques",                   // la comptine (voir musique.js)
+    melodie: "marcheDinos",                   // la comptine (voir musique.js)
     sons: "rugissement",                     // le type de bruitages (voir sons.js)
     secousse: true,                    // les cartes tremblent à la victoire ?
     ancienneCleRecord: "memory-dino-record"       // pour garder les records d'avant
